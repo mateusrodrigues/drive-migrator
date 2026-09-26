@@ -190,6 +190,21 @@ public sealed partial class TransferJobViewModel : ViewModelBase, IDisposable
         await _manager.RemoveAsync(Job);
     }
 
+    /// <summary>Copies every failure with its full technical details, for bug reports.</summary>
+    [RelayCommand]
+    private async Task CopyErrorDetailsAsync()
+    {
+        var failures = _manager.GetFailures(Job);
+        var text = string.Join(
+            Environment.NewLine + Environment.NewLine,
+            failures.Select(f => $"{f.Kind} item \"{f.Name}\" ({f.Source?.MimeType ?? f.Source?.Kind.ToString()}):{Environment.NewLine}{f.Details ?? f.Error}"));
+        await _dialogs.CopyToClipboardAsync($"Drive Migrator transfer \"{Title}\"{Environment.NewLine}{Environment.NewLine}{text}");
+        CopiedDetails = true;
+    }
+
+    [ObservableProperty]
+    public partial bool CopiedDetails { get; private set; }
+
     private void LoadFailures()
     {
         Failures.Clear();

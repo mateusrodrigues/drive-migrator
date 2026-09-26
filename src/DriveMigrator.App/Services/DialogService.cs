@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input.Platform;
 using DriveMigrator.App.ViewModels;
 using DriveMigrator.App.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +26,14 @@ internal sealed class DialogService(IServiceProvider services) : IDialogService
 
     public Task<bool> ShowTransferOptionsAsync(TransferOptionsViewModel options)
         => new TransferOptionsWindow { DataContext = options }.ShowDialog<bool>(Owner());
+
+    public async Task CopyToClipboardAsync(string text)
+    {
+        if (TopLevel.GetTopLevel(Owner())?.Clipboard is { } clipboard)
+        {
+            await clipboard.SetTextAsync(text);
+        }
+    }
 
     private static Window Owner()
     {

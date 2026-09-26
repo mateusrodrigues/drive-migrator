@@ -145,7 +145,7 @@ public sealed class TransferEngine(TransferStore store, int parallelism = 4)
         catch (Exception ex)
 #pragma warning restore CA1031
         {
-            store.MarkFinished(item.Id, ItemStatus.Failed, error: ex.Message);
+            store.MarkFinished(item.Id, ItemStatus.Failed, error: ex.Message, details: ex.ToString());
             run.Observer.ItemFinished(item, ItemStatus.Failed, ex.Message);
         }
 

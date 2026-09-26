@@ -40,6 +40,8 @@ public sealed record JobRecord(
 /// <summary>
 /// One unit of work. <see cref="Source"/> null means "every root item of the capability". Items are only created
 /// once their destination parent exists, so <see cref="TargetParent"/> is always known (null = destination root).
+/// <see cref="Error"/> is the message shown to the user; <see cref="Details"/> holds the full exception (type and
+/// stack trace) for bug reports.
 /// </summary>
 public sealed record ItemRecord(
     long Id,
@@ -53,7 +55,8 @@ public sealed record ItemRecord(
     ItemStatus Status,
     MigrationNode? Target = null,
     string? Error = null,
-    long Bytes = 0);
+    long Bytes = 0,
+    string? Details = null);
 
 /// <summary>A child discovered while processing a container.</summary>
 public sealed record NewItem(CapabilityKind Kind, MigrationNode? Source, MigrationNode? TargetParent, string Name);

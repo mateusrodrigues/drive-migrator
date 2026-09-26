@@ -13,6 +13,14 @@ internal sealed class FakeDialogService : IDialogService
 
     public Task ShowSettingsAsync() => Task.CompletedTask;
 
+    public string? Clipboard { get; private set; }
+
+    public Task CopyToClipboardAsync(string text)
+    {
+        Clipboard = text;
+        return Task.CompletedTask;
+    }
+
     public List<(string Title, string Message)> Messages { get; } = [];
 
     public Task ShowMessageAsync(string title, string message)

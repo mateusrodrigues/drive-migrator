@@ -176,6 +176,8 @@ public sealed class TransferEngineTests : IDisposable
 
         var failed = Assert.Single(_f.Store.LoadItems(job.Id, ItemStatus.Failed));
         Assert.Equal(("bad.txt", "disk on fire"), (failed.Name, failed.Error));
+        Assert.StartsWith("System.IO.IOException: disk on fire", failed.Details, StringComparison.Ordinal);
+        Assert.Contains(" at ", failed.Details, StringComparison.Ordinal);
         Assert.Equal(1, _f.Store.GetCounts(job.Id).Failed);
 
         fail = false;

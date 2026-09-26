@@ -54,6 +54,7 @@ public sealed class TransferStore : IDisposable
                 bytes INTEGER NOT NULL DEFAULT 0);
             CREATE INDEX IF NOT EXISTS items_job_status ON items(job_id, status);
             """);
+        store.AddColumnIfMissing("items", "details", "TEXT");
         return store;
     }
 
@@ -133,10 +134,10 @@ public sealed class TransferStore : IDisposable
     public IReadOnlyList<ItemRecord> LoadItems(long jobId, ItemStatus status)
         => QueryItems("job_id = $job AND status = $status ORDER BY id", ("$job", jobId), ("$status", (int)status));
 
-    public void MarkInProgress(long itemId) => SetStatus(itemId, ItemStatus.InProgress, target: null, error: null, bytes: 0);
+    public void MarkInProgress(long itemId) => SetStatus(itemId, ItemStatus.InProgress, target: null, error: null, bytes: 0, details: null);
 
-    public void MarkFinished(long itemId, ItemStatus status, MigrationNode? target = null, string? error = null, long bytes = 0)
-        => SetStatus(itemId, status, target, error, bytes);
+    public void MarkFinished(long itemId, ItemStatus status, MigrationNode? target = null, string? error = null, long bytes = 0, string? details = null)
+        => SetStatus(itemId, status, target, error, bytes, details);
 
     /// <summary>
     /// Records that a container was created (or found) at <paramref name="target"/> and adds its children, atomically,
@@ -153,7 +154,7 @@ public sealed class TransferStore : IDisposable
                 try
                 {
                     firstId = InsertItems(container.JobId, container.Id, container.Depth + 1, children);
-                    SetStatusCore(container.Id, ItemStatus.Done, target, error: null, bytes: 0);
+                    SetStatusCore(container.Id, ItemStatus.Done, target, error: null, bytes: 0, details: null);
                     transaction.Commit();
                 }
                 finally
@@ -170,7 +171,7 @@ public sealed class TransferStore : IDisposable
 
     /// <summary>Makes failed items pending again so the next run retries them.</summary>
     public int ResetFailed(long jobId)
-        => Execute("UPDATE items SET status = $pending, error = NULL WHERE job_id = $job AND status = $failed",
+        => Execute("UPDATE items SET status = $pending, error = NULL, details = NULL WHERE job_id = $job AND status = $failed",
             ("$pending", (int)ItemStatus.Pending), ("$job", jobId), ("$failed", (int)ItemStatus.Failed));
 
     public JobCounts GetCounts(long jobId)
@@ -229,20 +230,35 @@ public sealed class TransferStore : IDisposable
         return firstId;
     }
 
-    private void SetStatus(long itemId, ItemStatus status, MigrationNode? target, string? error, long bytes)
+    private void SetStatus(long itemId, ItemStatus status, MigrationNode? target, string? error, long bytes, string? details)
     {
         lock (_gate)
         {
-            SetStatusCore(itemId, status, target, error, bytes);
+            SetStatusCore(itemId, status, target, error, bytes, details);
         }
     }
 
-    private void SetStatusCore(long itemId, ItemStatus status, MigrationNode? target, string? error, long bytes)
+    private void SetStatusCore(long itemId, ItemStatus status, MigrationNode? target, string? error, long bytes, string? details)
     {
         using var command = Command(
-            "UPDATE items SET status = $status, target = $target, error = $error, bytes = $bytes WHERE id = $id",
-            ("$status", (int)status), ("$target", ToJson(target)), ("$error", (object?)error ?? DBNull.Value), ("$bytes", bytes), ("$id", itemId));
+            "UPDATE items SET status = $status, target = $target, error = $error, bytes = $bytes, details = $details WHERE id = $id",
+            ("$status", (int)status), ("$target", ToJson(target)), ("$error", (object?)error ?? DBNull.Value), ("$bytes", bytes),
+            ("$details", (object?)details ?? DBNull.Value), ("$id", itemId));
         command.ExecuteNonQuery();
+    }
+
+    /// <summary>Schema upgrade for databases created by earlier versions.</summary>
+    private void AddColumnIfMissing(string table, string column, string type)
+    {
+        lock (_gate)
+        {
+            using var info = Command($"SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name = $column", ("$column", column));
+            if (Convert.ToInt32(info.ExecuteScalar(), CultureInfo.InvariantCulture) == 0)
+            {
+                using var alter = Command($"ALTER TABLE {table} ADD COLUMN {column} {type}");
+                alter.ExecuteNonQuery();
+            }
+        }
     }
 
     private List<ItemRecord> QueryItems(string where, params (string Name, object Value)[] parameters)
@@ -256,7 +272,7 @@ public sealed class TransferStore : IDisposable
     private List<ItemRecord> QueryItemsCore(string where, params (string Name, object Value)[] parameters)
     {
         using var command = Command(
-            $"SELECT id, job_id, parent_id, kind, name, depth, source, target_parent, status, target, error, bytes FROM items WHERE {where}",
+            $"SELECT id, job_id, parent_id, kind, name, depth, source, target_parent, status, target, error, bytes, details FROM items WHERE {where}",
             parameters);
         using var reader = command.ExecuteReader();
         var items = new List<ItemRecord>();
@@ -274,7 +290,8 @@ public sealed class TransferStore : IDisposable
                 (ItemStatus)reader.GetInt32(8),
                 FromJson(reader, 9),
                 reader.IsDBNull(10) ? null : reader.GetString(10),
-                reader.GetInt64(11)));
+                reader.GetInt64(11),
+                reader.IsDBNull(12) ? null : reader.GetString(12)));
         }
 
         return items;

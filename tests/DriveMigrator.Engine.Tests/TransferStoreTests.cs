@@ -42,6 +42,26 @@ public sealed class TransferStoreTests : IDisposable
     }
 
     [Fact]
+    public void OlderDatabaseWithoutDetailsColumn_IsUpgraded()
+    {
+        var path = Path.Combine(Path.GetDirectoryName(_f.StorePath)!, "old.db");
+        using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={path};Pooling=False"))
+        {
+            connection.Open();
+            using var create = connection.CreateCommand();
+            create.CommandText = "CREATE TABLE items (id INTEGER PRIMARY KEY AUTOINCREMENT, job_id INTEGER NOT NULL, parent_id INTEGER, kind INTEGER NOT NULL, name TEXT NOT NULL, depth INTEGER NOT NULL, source TEXT, target_parent TEXT, target TEXT, status INTEGER NOT NULL, error TEXT, bytes INTEGER NOT NULL DEFAULT 0);";
+            create.ExecuteNonQuery();
+        }
+
+        using var store = TransferStore.Open(path);
+        var job = store.CreateJob("t", new AccountRef("a", "1"), new AccountRef("b", "2"), TransferOptions.Default, [], [new NewItem(CapabilityKind.Drive, null, null, "Drive")]);
+        var item = Assert.Single(store.LoadPendingItems(job.Id));
+        store.MarkFinished(item.Id, ItemStatus.Failed, error: "e", details: "full");
+
+        Assert.Equal("full", Assert.Single(store.LoadItems(job.Id, ItemStatus.Failed)).Details);
+    }
+
+    [Fact]
     public void DeleteJob_RemovesItems()
     {
         var job = _f.CreateJob([null]);
