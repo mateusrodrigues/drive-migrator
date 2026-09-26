@@ -17,6 +17,7 @@
     <PackageVersion Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.90.1" />
     <PackageVersion Include="Google.Apis.Auth" Version="1.76.0" />
     <PackageVersion Include="Google.Apis.Drive.v3" Version="1.76.0.4273" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.12" />
     <!-- Tests -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />

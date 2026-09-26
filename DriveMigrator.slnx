@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/DriveMigrator.App/DriveMigrator.App.csproj" />
     <Project Path="src/DriveMigrator.Core/DriveMigrator.Core.csproj" />
+    <Project Path="src/DriveMigrator.Engine/DriveMigrator.Engine.csproj" />
     <Project Path="src/DriveMigrator.Infrastructure/DriveMigrator.Infrastructure.csproj" />
     <Project Path="src/DriveMigrator.Providers.Google/DriveMigrator.Providers.Google.csproj" />
     <Project Path="src/DriveMigrator.Providers.Microsoft/DriveMigrator.Providers.Microsoft.csproj" />
@@ -9,6 +10,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/DriveMigrator.App.Tests/DriveMigrator.App.Tests.csproj" />
     <Project Path="tests/DriveMigrator.Core.Tests/DriveMigrator.Core.Tests.csproj" />
+    <Project Path="tests/DriveMigrator.Engine.Tests/DriveMigrator.Engine.Tests.csproj" />
     <Project Path="tests/DriveMigrator.Infrastructure.Tests/DriveMigrator.Infrastructure.Tests.csproj" />
     <Project Path="tests/DriveMigrator.Providers.Tests/DriveMigrator.Providers.Tests.csproj" />
     <Project Path="tests/DriveMigrator.Testing/DriveMigrator.Testing.csproj" />

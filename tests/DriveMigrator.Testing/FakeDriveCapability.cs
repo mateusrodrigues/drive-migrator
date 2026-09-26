@@ -5,6 +5,26 @@ namespace DriveMigrator.Testing;
 
 public sealed class FakeDriveCapability() : InMemoryCapability(CapabilityKind.Drive, NodeKind.Folder, supportsNestedContainers: true), IDriveCapability
 {
+    public IReadOnlyList<NativeDocumentType> NativeDocumentTypes { get; set; } = [];
+
+    public bool CanConvertToNativeFormat { get; set; }
+
+    /// <summary>Characters the fake rejects in names (replaced by '_' in <see cref="ToValidName"/>), to mimic OneDrive.</summary>
+    public string InvalidNameCharacters { get; set; } = string.Empty;
+
+    /// <summary>Called before each upload with the file name; throw or block to simulate failures and slow transfers.</summary>
+    public Func<string, CancellationToken, Task>? OnUpload { get; set; }
+
+    private int _uploadCount;
+
+    public int UploadCount => _uploadCount;
+
+    public string ToValidName(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        return string.Concat(name.Select(c => InvalidNameCharacters.Contains(c, StringComparison.Ordinal) ? '_' : c));
+    }
+
     public MigrationNode AddFile(MigrationNode? parent, string name, byte[] content, string mimeType = "application/octet-stream")
         => Add(parent, FileNode(NewId(), name, mimeType, content.Length), new StoredFile(content, ConvertedToNative: false, Exports: null));
 
@@ -52,9 +72,10 @@ public sealed class FakeDriveCapability() : InMemoryCapability(CapabilityKind.Dr
             bytes = stored.Content;
         }
 
+        // Like Google Drive, exports don't announce their size up front.
         var content = new DriveFileContent(new MemoryStream(bytes, writable: false), name, mimeType)
         {
-            Length = bytes.Length,
+            Length = stored.Exports is null ? bytes.Length : null,
             ModifiedAt = file.ModifiedAt,
         };
         return Task.FromResult(content);
@@ -69,6 +90,15 @@ public sealed class FakeDriveCapability() : InMemoryCapability(CapabilityKind.Dr
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(options);
+        if (OnUpload is not null)
+        {
+            await OnUpload(content.Name, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (content.Name.Any(c => InvalidNameCharacters.Contains(c, StringComparison.Ordinal)))
+        {
+            throw new ArgumentException($"'{content.Name}' contains characters this drive does not allow.", nameof(content));
+        }
 
         using var buffer = new MemoryStream();
         var chunk = new byte[81920];
@@ -79,6 +109,7 @@ public sealed class FakeDriveCapability() : InMemoryCapability(CapabilityKind.Dr
             progress?.Report(buffer.Length);
         }
 
+        Interlocked.Increment(ref _uploadCount);
         var bytes = buffer.ToArray();
         var node = FileNode(NewId(), content.Name, content.MimeType, bytes.Length) with { ModifiedAt = content.ModifiedAt };
         var stored = new StoredFile(bytes, options.ConvertToNativeFormat, Exports: null);

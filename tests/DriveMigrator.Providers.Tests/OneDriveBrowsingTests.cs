@@ -43,7 +43,7 @@ public class OneDriveBrowsingTests
                 Assert.Equal(new DateTimeOffset(2026, 1, 2, 3, 4, 5, TimeSpan.Zero), n.ModifiedAt);
             });
         Assert.Equal(2, handler.Requests.Count);
-        Assert.All(handler.Requests, r => Assert.Equal("Bearer token", r.Headers.Authorization?.ToString()));
+        Assert.All(handler.Requests, r => Assert.Equal("Bearer token", r.Authorization));
     }
 
     [Fact]

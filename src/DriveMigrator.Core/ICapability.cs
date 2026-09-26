@@ -22,6 +22,12 @@ public interface ICapability
     Task<MigrationNode> CreateContainerAsync(MigrationNode? parent, string name, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Adjusts a name to what this service accepts (e.g. OneDrive forbids characters like ':' and '?' that Google
+    /// allows). The engine uses the adjusted name both to detect existing items and to create new ones.
+    /// </summary>
+    string ToValidName(string name) => name;
+
+    /// <summary>
     /// Finds a direct child by name. The default implementation scans <see cref="GetChildrenAsync"/>
     /// case-insensitively; providers with a server-side lookup should override it.
     /// </summary>

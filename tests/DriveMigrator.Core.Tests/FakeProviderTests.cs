@@ -119,7 +119,7 @@ public class FakeProviderTests
         await using var exported = await drive.OpenReadAsync(doc, pdf, Ct);
         Assert.Equal("Report.pdf", exported.Name);
         Assert.Equal("application/pdf", exported.MimeType);
-        Assert.Equal(1, exported.Length);
+        Assert.Null(exported.Length); // like Google exports, size unknown until read
     }
 
     [Fact]

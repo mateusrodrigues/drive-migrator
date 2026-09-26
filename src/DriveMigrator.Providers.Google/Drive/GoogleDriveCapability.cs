@@ -1,16 +1,56 @@
+using System.Net;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using DriveMigrator.Core;
 using DriveMigrator.Core.Drive;
 using Google.Apis.Drive.v3;
+using Google.Apis.Http;
+using Google.Apis.Upload;
+using Google.Apis.Util;
 using GoogleFile = Google.Apis.Drive.v3.Data.File;
 
 namespace DriveMigrator.Providers.Google.Drive;
 
 /// <summary>Google Drive ("My Drive"). Node ids are Drive file ids; the root is "root".</summary>
-internal sealed class GoogleDriveCapability(DriveService drive) : IDriveCapability
+internal sealed class GoogleDriveCapability : IDriveCapability
 {
     internal const string FolderMimeType = "application/vnd.google-apps.folder";
+
+    /// <summary>Resumable upload chunk size; Google requires a multiple of 256 KiB.</summary>
+    internal const int ChunkSize = 40 * 256 * 1024;
+
     private const string GoogleAppsPrefix = "application/vnd.google-apps.";
+    private const string FileFields = "id, name, mimeType, size, modifiedTime";
+
+    /// <summary>Upload MIME types Google can convert, and the native type they become.</summary>
+    internal static readonly IReadOnlyDictionary<string, string> ConvertibleTypes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"] = GoogleAppsPrefix + "document",
+        ["application/msword"] = GoogleAppsPrefix + "document",
+        ["application/vnd.oasis.opendocument.text"] = GoogleAppsPrefix + "document",
+        ["application/rtf"] = GoogleAppsPrefix + "document",
+        ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"] = GoogleAppsPrefix + "spreadsheet",
+        ["application/vnd.ms-excel"] = GoogleAppsPrefix + "spreadsheet",
+        ["application/vnd.oasis.opendocument.spreadsheet"] = GoogleAppsPrefix + "spreadsheet",
+        ["text/csv"] = GoogleAppsPrefix + "spreadsheet",
+        ["application/vnd.openxmlformats-officedocument.presentationml.presentation"] = GoogleAppsPrefix + "presentation",
+        ["application/vnd.ms-powerpoint"] = GoogleAppsPrefix + "presentation",
+        ["application/vnd.oasis.opendocument.presentation"] = GoogleAppsPrefix + "presentation",
+    };
+
+    private readonly DriveService _drive;
+
+    public GoogleDriveCapability(DriveService drive)
+    {
+        _drive = drive;
+
+        // Retry throttling (429) and server errors with exponential back-off, for API calls and raw downloads alike.
+        drive.HttpClient.MessageHandler.AddUnsuccessfulResponseHandler(new BackOffHandler(
+            new BackOffHandler.Initializer(new ExponentialBackOff(TimeSpan.FromMilliseconds(500), 6))
+            {
+                HandleUnsuccessfulResponseFunc = r => r.StatusCode is HttpStatusCode.TooManyRequests or >= HttpStatusCode.InternalServerError,
+            }));
+    }
 
     private static readonly ExportFormat Pdf = new("application/pdf", ".pdf", "PDF");
 
@@ -48,13 +88,23 @@ internal sealed class GoogleDriveCapability(DriveService drive) : IDriveCapabili
 
     public string DisplayName => "Google Drive";
 
+    public IReadOnlyList<NativeDocumentType> NativeDocumentTypes { get; } =
+    [
+        new(GoogleAppsPrefix + "document", "Google Docs", NativeExportFormats[GoogleAppsPrefix + "document"]),
+        new(GoogleAppsPrefix + "spreadsheet", "Google Sheets", NativeExportFormats[GoogleAppsPrefix + "spreadsheet"]),
+        new(GoogleAppsPrefix + "presentation", "Google Slides", NativeExportFormats[GoogleAppsPrefix + "presentation"]),
+        new(GoogleAppsPrefix + "drawing", "Google Drawings", NativeExportFormats[GoogleAppsPrefix + "drawing"]),
+    ];
+
+    public bool CanConvertToNativeFormat => true;
+
     public bool SupportsNestedContainers => true;
 
     public async IAsyncEnumerable<MigrationNode> GetChildrenAsync(
         MigrationNode? parent,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var request = drive.Files.List();
+        var request = _drive.Files.List();
         request.Q = $"'{parent?.Id ?? "root"}' in parents and trashed = false";
         request.Fields = "nextPageToken, files(id, name, mimeType, size, modifiedTime)";
         request.PageSize = 1000;
@@ -83,19 +133,115 @@ internal sealed class GoogleDriveCapability(DriveService drive) : IDriveCapabili
         while (request.PageToken is not null);
     }
 
-    public Task<MigrationNode> CreateContainerAsync(MigrationNode? parent, string name, CancellationToken cancellationToken = default)
-        => throw TransfersNotAvailable();
+    public async Task<MigrationNode> CreateContainerAsync(MigrationNode? parent, string name, CancellationToken cancellationToken = default)
+    {
+        var request = _drive.Files.Create(new GoogleFile { Name = name, MimeType = FolderMimeType, Parents = [parent?.Id ?? "root"] });
+        request.Fields = FileFields;
+        request.SupportsAllDrives = true;
+        var created = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        return ToNode(created)!;
+    }
 
-    public Task<DriveFileContent> OpenReadAsync(MigrationNode file, ExportFormat? exportAs, CancellationToken cancellationToken = default)
-        => throw TransfersNotAvailable();
+    public async Task<DriveFileContent> OpenReadAsync(MigrationNode file, ExportFormat? exportAs, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(file);
+        var id = Uri.EscapeDataString(file.Id);
+        HttpResponseMessage response;
+        if (file.RequiresExport)
+        {
+            if (exportAs is null || !file.ExportFormats.Contains(exportAs))
+            {
+                throw new ArgumentException($"'{file.Name}' is a Google document and must be exported to one of its formats.", nameof(exportAs));
+            }
 
-    public Task<MigrationNode> UploadAsync(
+            response = await GetAsync($"files/{id}/export?mimeType={Uri.EscapeDataString(exportAs.MimeType)}", cancellationToken).ConfigureAwait(false);
+            if (response.StatusCode == HttpStatusCode.Forbidden && (await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false)).Contains("exportSizeLimitExceeded", StringComparison.Ordinal))
+            {
+                // files.export is limited to 10 MB; the export links serve larger documents.
+                response.Dispose();
+                response = await GetExportLinkAsync(file, exportAs, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        else
+        {
+            if (exportAs is not null)
+            {
+                throw new ArgumentException($"'{file.Name}' is a regular file and cannot be exported.", nameof(exportAs));
+            }
+
+            response = await GetAsync($"files/{id}?alt=media&supportsAllDrives=true", cancellationToken).ConfigureAwait(false);
+        }
+
+        try
+        {
+            await EnsureSuccessAsync(response, file.Name, cancellationToken).ConfigureAwait(false);
+            var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            return new DriveFileContent(new HttpResponseStream(stream, response), file.Name, exportAs?.MimeType ?? file.MimeType ?? "application/octet-stream")
+            {
+                // Exports are generated on the fly, so their size is usually unknown until read.
+                Length = response.Content.Headers.ContentLength ?? (exportAs is null ? file.Size : null),
+                ModifiedAt = file.ModifiedAt,
+            };
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
+    }
+
+    public async Task<MigrationNode> UploadAsync(
         MigrationNode? parent,
         DriveFileContent content,
         DriveUploadOptions options,
         IProgress<long>? progress = null,
         CancellationToken cancellationToken = default)
-        => throw TransfersNotAvailable();
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(options);
+
+        var metadata = new GoogleFile { ModifiedTimeDateTimeOffset = content.ModifiedAt };
+        if (options.ConvertToNativeFormat && ConvertibleTypes.TryGetValue(content.MimeType, out var nativeType))
+        {
+            metadata.MimeType = nativeType;
+        }
+
+        ResumableUpload<GoogleFile, GoogleFile> upload;
+        Func<GoogleFile?> responseBody;
+        if (options.Replace is { } replace)
+        {
+            var request = _drive.Files.Update(metadata, replace.Id, content.Content, content.MimeType);
+            request.Fields = FileFields;
+            request.SupportsAllDrives = true;
+            upload = request;
+            responseBody = () => request.ResponseBody;
+        }
+        else
+        {
+            metadata.Name = content.Name;
+            metadata.Parents = [parent?.Id ?? "root"];
+            var request = _drive.Files.Create(metadata, content.Content, content.MimeType);
+            request.Fields = FileFields;
+            request.SupportsAllDrives = true;
+            upload = request;
+            responseBody = () => request.ResponseBody;
+        }
+
+        upload.ChunkSize = ChunkSize;
+        if (progress is not null)
+        {
+            upload.ProgressChanged += p => progress.Report(p.BytesSent);
+        }
+
+        var result = await upload.UploadAsync(cancellationToken).ConfigureAwait(false);
+        if (result.Status != UploadStatus.Completed)
+        {
+            throw new IOException($"Uploading '{content.Name}' to Google Drive failed: {result.Exception?.Message ?? result.Status.ToString()}", result.Exception);
+        }
+
+        return ToNode(responseBody() ?? throw new IOException($"Google Drive returned no file for '{content.Name}'."))
+            ?? throw new IOException($"Google Drive returned an unsupported file type for '{content.Name}'.");
+    }
 
     internal static MigrationNode? ToNode(GoogleFile file)
     {
@@ -121,6 +267,44 @@ internal sealed class GoogleDriveCapability(DriveService drive) : IDriveCapabili
         };
     }
 
-    // Reading and writing file content arrive with the transfer engine.
-    private static NotSupportedException TransfersNotAvailable() => new("Copying Google Drive content is not available yet.");
+    private Task<HttpResponseMessage> GetAsync(string relativeUrl, CancellationToken cancellationToken)
+        => _drive.HttpClient.GetAsync(new Uri(new Uri(_drive.BaseUri), relativeUrl), HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+    private async Task<HttpResponseMessage> GetExportLinkAsync(MigrationNode file, ExportFormat format, CancellationToken cancellationToken)
+    {
+        var request = _drive.Files.Get(file.Id);
+        request.Fields = "exportLinks";
+        request.SupportsAllDrives = true;
+        var links = (await request.ExecuteAsync(cancellationToken).ConfigureAwait(false)).ExportLinks;
+        if (links is null || !links.TryGetValue(format.MimeType, out var link))
+        {
+            throw new IOException($"'{file.Name}' is too large to export as {format.DisplayName}.");
+        }
+
+        return await _drive.HttpClient.GetAsync(new Uri(link), HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task EnsureSuccessAsync(HttpResponseMessage response, string name, CancellationToken cancellationToken)
+    {
+        if (response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        var message = $"{(int)response.StatusCode} {response.ReasonPhrase}";
+        try
+        {
+            using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false));
+            if (body.RootElement.TryGetProperty("error", out var error) && error.TryGetProperty("message", out var text))
+            {
+                message = text.GetString() ?? message;
+            }
+        }
+        catch (JsonException)
+        {
+            // Not a JSON error body.
+        }
+
+        throw new HttpRequestException($"Google Drive could not download '{name}': {message}", null, response.StatusCode);
+    }
 }

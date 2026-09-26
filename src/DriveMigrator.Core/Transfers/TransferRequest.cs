@@ -12,6 +12,8 @@ public sealed record TransferRequest(
     IReadOnlyList<TransferItem> Items,
     IReadOnlyList<TransferTarget> Targets)
 {
+    public TransferOptions Options { get; init; } = TransferOptions.Default;
+
     public TransferTarget? GetTarget(CapabilityKind kind) => Targets.FirstOrDefault(t => t.Kind == kind);
 }
 

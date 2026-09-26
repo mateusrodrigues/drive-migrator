@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DriveMigrator.Engine\DriveMigrator.Engine.csproj" />
+  </ItemGroup>
+</Project>
