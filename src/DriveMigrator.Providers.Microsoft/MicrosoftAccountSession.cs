@@ -1,5 +1,7 @@
 using DriveMigrator.Core;
 using DriveMigrator.Core.Accounts;
+using DriveMigrator.Providers.Microsoft.Drive;
+using DriveMigrator.Providers.Microsoft.Graph;
 using Microsoft.Identity.Client;
 
 namespace DriveMigrator.Providers.Microsoft;
@@ -9,17 +11,20 @@ public sealed class MicrosoftAccountSession : IAccountSession
     private readonly IPublicClientApplication _app;
     private readonly IAccount _msalAccount;
 
-    internal MicrosoftAccountSession(AccountInfo account, IPublicClientApplication app, IAccount msalAccount)
+    internal MicrosoftAccountSession(AccountInfo account, IPublicClientApplication app, IAccount msalAccount, HttpClient http)
     {
         Account = account;
         _app = app;
         _msalAccount = msalAccount;
+
+        var graph = new GraphClient(http, GetAccessTokenAsync);
+        Capabilities = [new OneDriveCapability(graph)];
     }
 
     public AccountInfo Account { get; }
 
-    // OneDrive, Outlook Mail, Calendar and Contacts capabilities are added in later phases.
-    public IReadOnlyList<ICapability> Capabilities { get; } = [];
+    // Outlook Mail, Calendar and Contacts capabilities are added in later phases.
+    public IReadOnlyList<ICapability> Capabilities { get; }
 
     /// <summary>Gets a Microsoft Graph access token, refreshing it silently when needed.</summary>
     /// <exception cref="ReauthenticationRequiredException">The refresh token expired or consent was revoked.</exception>

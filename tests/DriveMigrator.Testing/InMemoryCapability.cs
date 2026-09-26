@@ -15,6 +15,11 @@ public abstract class InMemoryCapability(CapabilityKind kind, NodeKind container
 
     public CapabilityKind Kind { get; } = kind;
 
+    public string DisplayName { get; set; } = kind.ToString();
+
+    /// <summary>Called before listing children; return an exception to simulate a failing request.</summary>
+    public Func<MigrationNode?, Exception?>? OnGetChildren { get; set; }
+
     public bool SupportsNestedContainers { get; } = supportsNestedContainers;
 
     protected NodeKind ContainerKind { get; } = containerKind;
@@ -23,6 +28,11 @@ public abstract class InMemoryCapability(CapabilityKind kind, NodeKind container
         MigrationNode? parent,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        if (OnGetChildren?.Invoke(parent) is { } failure)
+        {
+            throw failure;
+        }
+
         MigrationNode[] children;
         lock (_gate)
         {

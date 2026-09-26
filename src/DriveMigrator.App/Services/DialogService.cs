@@ -20,6 +20,9 @@ internal sealed class DialogService(IServiceProvider services) : IDialogService
     public Task<bool> ConfirmAsync(string title, string message, string confirmText)
         => new ConfirmDialog(title, message, confirmText).ShowDialog<bool>(Owner());
 
+    public Task ShowMessageAsync(string title, string message)
+        => new ConfirmDialog(title, message, "OK", showCancel: false).ShowDialog(Owner());
+
     private static Window Owner()
     {
         var desktop = (IClassicDesktopStyleApplicationLifetime)Application.Current!.ApplicationLifetime!;

@@ -1,6 +1,7 @@
 using DriveMigrator.Core;
 using DriveMigrator.Core.Accounts;
 using DriveMigrator.Core.Security;
+using DriveMigrator.Providers.Microsoft.Graph;
 using Microsoft.Identity.Client;
 
 namespace DriveMigrator.Providers.Microsoft;
@@ -28,6 +29,12 @@ public sealed class MicrosoftCloudProvider(ISecretStore secrets, ProviderCredent
     private const string SuccessPage =
         "<html><head><title>Drive Migrator</title></head><body style=\"font-family:sans-serif\">" +
         "<p>You're signed in. You can close this tab and return to Drive Migrator.</p></body></html>";
+
+    // One connection pool for all Graph traffic; recycle connections so DNS changes are picked up.
+    private readonly HttpClient _http = new(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) })
+    {
+        BaseAddress = new Uri(GraphClient.BaseUrl),
+    };
 
     private readonly SemaphoreSlim _appGate = new(1, 1);
     private (string ClientId, string Tenant, IPublicClientApplication App)? _app;
@@ -64,7 +71,7 @@ public sealed class MicrosoftCloudProvider(ISecretStore secrets, ProviderCredent
         var result = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
         var displayName = result.ClaimsPrincipal?.FindFirst("name")?.Value ?? result.Account.Username;
         var account = new AccountInfo(Id, result.Account.HomeAccountId.Identifier, displayName, result.Account.Username);
-        return new MicrosoftAccountSession(account, app, result.Account);
+        return new MicrosoftAccountSession(account, app, result.Account, _http);
     }
 
     public async Task<IAccountSession> RestoreSessionAsync(AccountInfo account, CancellationToken cancellationToken = default)
@@ -74,7 +81,7 @@ public sealed class MicrosoftCloudProvider(ISecretStore secrets, ProviderCredent
         var msalAccount = await app.GetAccountAsync(account.AccountId).ConfigureAwait(false)
             ?? throw new ReauthenticationRequiredException($"No saved sign-in for {account.Email}. Re-authorize the account.");
 
-        var session = new MicrosoftAccountSession(account, app, msalAccount);
+        var session = new MicrosoftAccountSession(account, app, msalAccount, _http);
         await session.GetAccessTokenAsync(cancellationToken).ConfigureAwait(false);
         return session;
     }
@@ -94,7 +101,11 @@ public sealed class MicrosoftCloudProvider(ISecretStore secrets, ProviderCredent
         }
     }
 
-    public void Dispose() => _appGate.Dispose();
+    public void Dispose()
+    {
+        _appGate.Dispose();
+        _http.Dispose();
+    }
 
     /// <summary>Returns the MSAL client for the current credentials, rebuilding it if they changed in Settings.</summary>
     private async Task<IPublicClientApplication> GetAppAsync(CancellationToken cancellationToken)

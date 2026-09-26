@@ -10,6 +10,14 @@ internal sealed class FakeDialogService : IDialogService
 
     public Task ShowSettingsAsync() => Task.CompletedTask;
 
+    public List<(string Title, string Message)> Messages { get; } = [];
+
+    public Task ShowMessageAsync(string title, string message)
+    {
+        Messages.Add((title, message));
+        return Task.CompletedTask;
+    }
+
     public Task<bool> ConfirmAsync(string title, string message, string confirmText)
     {
         Confirmations.Add(message);

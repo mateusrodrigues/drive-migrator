@@ -1,0 +1,60 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DriveMigrator.App.ViewModels"
+             x:Class="DriveMigrator.App.Views.PaneView"
+             x:DataType="vm:PaneViewModel">
+  <UserControl.Styles>
+    <Style Selector="TreeViewItem" x:DataType="vm:NodeViewModel">
+      <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+    </Style>
+    <Style Selector="CheckBox.node">
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0,0,6,0" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Opacity" Value="0.65" />
+    </Style>
+  </UserControl.Styles>
+
+  <Border BorderThickness="1" CornerRadius="6" Padding="8"
+          BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+    <DockPanel>
+      <ComboBox DockPanel.Dock="Top" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                ItemsSource="{Binding Accounts}" SelectedItem="{Binding SelectedAccount}"
+                PlaceholderText="Choose an account" IsEnabled="{Binding HasAnyAccounts}">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:AccountOptionViewModel">
+            <StackPanel>
+              <TextBlock Text="{Binding Label}" />
+              <TextBlock Classes="muted" FontSize="12" Text="{Binding Email}" />
+            </StackPanel>
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+
+      <StackPanel DockPanel.Dock="Bottom" Margin="4,8,4,0" Spacing="2" IsVisible="{Binding HasAccount}">
+        <TextBlock Classes="muted" FontSize="12" Text="{Binding SelectionSummary}" TextTrimming="CharacterEllipsis" />
+        <TextBlock Classes="muted" FontSize="12" Text="{Binding DestinationSummary}" TextTrimming="CharacterEllipsis" />
+      </StackPanel>
+
+      <Panel>
+        <TextBlock Classes="muted" Margin="4" TextWrapping="Wrap" IsVisible="{Binding !HasAnyAccounts}"
+                   Text="Connect accounts in Settings to browse them here." />
+        <TreeView ItemsSource="{Binding Roots}" SelectedItem="{Binding SelectedNode}" IsVisible="{Binding HasAccount}">
+          <TreeView.ItemTemplate>
+            <TreeDataTemplate x:DataType="vm:NodeViewModel" ItemsSource="{Binding Children}">
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <CheckBox Classes="node" IsThreeState="False" IsChecked="{Binding IsChecked}" IsVisible="{Binding !IsPlaceholder}" />
+                <PathIcon Width="16" Height="16" Margin="0,0,6,0" Data="{Binding Icon}" IsVisible="{Binding !IsPlaceholder}" />
+                <TextBlock VerticalAlignment="Center" Text="{Binding Name}" FontStyle="{Binding IsPlaceholder, Converter={x:Static vm:Converters.ItalicIfTrue}}" />
+                <TextBlock Classes="muted" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" Text="{Binding Detail}" />
+              </StackPanel>
+            </TreeDataTemplate>
+          </TreeView.ItemTemplate>
+        </TreeView>
+      </Panel>
+    </DockPanel>
+  </Border>
+</UserControl>

@@ -9,6 +9,9 @@ public interface ICapability
 {
     CapabilityKind Kind { get; }
 
+    /// <summary>Service-specific name shown as the top-level tree node, e.g. "OneDrive" or "Google Drive".</summary>
+    string DisplayName { get; }
+
     /// <summary>Whether containers can be created inside other containers (false for calendars).</summary>
     bool SupportsNestedContainers { get; }
 

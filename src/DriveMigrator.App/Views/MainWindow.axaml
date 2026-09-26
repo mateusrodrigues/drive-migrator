@@ -1,20 +1,40 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:DriveMigrator.App.ViewModels"
+        xmlns:views="using:DriveMigrator.App.Views"
         x:Class="DriveMigrator.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Drive Migrator"
         Width="1100" Height="700"
         MinWidth="800" MinHeight="500">
   <DockPanel Margin="16">
-    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto">
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
       <TextBlock FontSize="20" FontWeight="SemiBold" Text="Drive Migrator" VerticalAlignment="Center" />
       <Button Grid.Column="1" Content="Settings" Command="{Binding OpenSettingsCommand}" />
     </Grid>
-    <Border Margin="0,12,0,0" Padding="12,8" CornerRadius="4" VerticalAlignment="Top"
+
+    <Border DockPanel.Dock="Top" Margin="0,0,0,12" Padding="12,8" CornerRadius="4"
             Background="{DynamicResource BannerWarningBrush}" IsVisible="{Binding NeedsAttention}">
       <TextBlock TextWrapping="Wrap" Text="{Binding Status}" />
     </Border>
-    <TextBlock Margin="0,12,0,0" TextWrapping="Wrap" Text="{Binding Status}" IsVisible="{Binding !NeedsAttention}" />
+    <TextBlock DockPanel.Dock="Top" Margin="0,0,0,12" TextWrapping="Wrap" Text="{Binding Status}"
+               IsVisible="{Binding ShowInfo}" />
+
+    <Grid ColumnDefinitions="*,Auto,*">
+      <views:PaneView Grid.Column="0" DataContext="{Binding Left}" />
+
+      <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0" Spacing="12">
+        <Button HorizontalAlignment="Center" Command="{Binding CopyLeftToRightCommand}"
+                ToolTip.Tip="Copy checked items from the left pane into the right pane">
+          <PathIcon Data="M4 11h12.17l-5.58-5.59L12 4l8 8-8 8-1.41-1.41L16.17 13H4z" />
+        </Button>
+        <Button HorizontalAlignment="Center" Command="{Binding CopyRightToLeftCommand}"
+                ToolTip.Tip="Copy checked items from the right pane into the left pane">
+          <PathIcon Data="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z" />
+        </Button>
+      </StackPanel>
+
+      <views:PaneView Grid.Column="2" DataContext="{Binding Right}" />
+    </Grid>
   </DockPanel>
 </Window>

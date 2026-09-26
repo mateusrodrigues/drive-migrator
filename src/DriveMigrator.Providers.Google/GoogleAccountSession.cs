@@ -1,6 +1,9 @@
 using DriveMigrator.Core;
 using DriveMigrator.Core.Accounts;
+using DriveMigrator.Providers.Google.Drive;
 using Google.Apis.Auth.OAuth2;
+using Google.Apis.Drive.v3;
+using Google.Apis.Services;
 
 namespace DriveMigrator.Providers.Google;
 
@@ -10,6 +13,9 @@ public sealed class GoogleAccountSession : IAccountSession
     {
         Account = account;
         Credential = credential;
+
+        var services = new BaseClientService.Initializer { HttpClientInitializer = credential, ApplicationName = "DriveMigrator" };
+        Capabilities = [new GoogleDriveCapability(new DriveService(services))];
     }
 
     public AccountInfo Account { get; }
@@ -17,6 +23,6 @@ public sealed class GoogleAccountSession : IAccountSession
     /// <summary>Refreshing credential used to construct Google API service clients.</summary>
     public UserCredential Credential { get; }
 
-    // Drive, Gmail, Calendar and People capabilities are added in later phases.
-    public IReadOnlyList<ICapability> Capabilities { get; } = [];
+    // Gmail, Calendar and People capabilities are added in later phases.
+    public IReadOnlyList<ICapability> Capabilities { get; }
 }

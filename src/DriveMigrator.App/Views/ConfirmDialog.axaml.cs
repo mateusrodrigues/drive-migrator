@@ -11,12 +11,13 @@ public partial class ConfirmDialog : Window
     {
     }
 
-    public ConfirmDialog(string title, string message, string confirmText)
+    public ConfirmDialog(string title, string message, string confirmText, bool showCancel = true)
     {
         InitializeComponent();
         Title = title;
         MessageText.Text = message;
         ConfirmButton.Content = confirmText;
+        CancelButton.IsVisible = showCancel;
     }
 
     private void OnConfirm(object? sender, RoutedEventArgs e) => Close(true);

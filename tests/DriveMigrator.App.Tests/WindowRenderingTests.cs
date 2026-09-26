@@ -73,11 +73,42 @@ public sealed class WindowRenderingTests : IDisposable
     }
 
     [AvaloniaFact]
-    public void MainWindow_Renders()
+    public async Task MainWindow_RendersPanesAndTrees()
     {
-        var vm = new MainWindowViewModel(_accounts, new FakeDialogService());
+        var source = _google.AddAccount("ada@gmail.com");
+        source.Drive.DisplayName = "Google Drive";
+        var taxes = source.Drive.AddContainer(null, "Taxes");
+        source.Drive.AddFile(taxes, "2025 return.pdf", new byte[2_400_000]);
+        source.Drive.AddNativeDocument(taxes, "Budget", "application/vnd.google-apps.spreadsheet",
+            (new Core.ExportFormat("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx", "Excel"), [1]));
+        source.Drive.AddContainer(null, "Photos");
+        source.Drive.AddFile(null, "notes.txt", new byte[1200]);
+
+        var target = _microsoft.AddAccount("ada@outlook.com");
+        target.Drive.DisplayName = "OneDrive";
+        target.Drive.AddContainer(null, "Documents");
+        target.Drive.AddContainer(null, "Pictures");
+        _accountStore.Accounts = [source.Account, target.Account];
+
+        using var vm = new MainWindowViewModel(_accounts, new ProviderRegistry([_google, _microsoft]), new FakeDialogService());
         var window = new MainWindow { DataContext = vm };
         window.Show();
+        await vm.InitializeAsync();
+
+        var left = vm.Left.Roots[0];
+        left.IsExpanded = true;
+        await left.LoadChildrenAsync();
+        var taxesNode = left.Children[1];
+        taxesNode.IsExpanded = true;
+        await taxesNode.LoadChildrenAsync();
+        taxesNode.Children[0].IsChecked = true;
+        left.Children[0].IsChecked = true;
+
+        var right = vm.Right.Roots[0];
+        right.IsExpanded = true;
+        await right.LoadChildrenAsync();
+        vm.Right.SelectedNode = right.Children[0];
+
         Capture(window, "main");
         window.Close();
     }

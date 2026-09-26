@@ -16,6 +16,9 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="DriveMigrator.App.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\DriveMigrator.Core\DriveMigrator.Core.csproj" />
     <ProjectReference Include="..\DriveMigrator.Infrastructure\DriveMigrator.Infrastructure.csproj" />
     <ProjectReference Include="..\DriveMigrator.Providers.Google\DriveMigrator.Providers.Google.csproj" />
