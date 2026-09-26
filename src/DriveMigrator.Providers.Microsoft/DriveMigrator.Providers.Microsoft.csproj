@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>DriveMigrator.Providers.Microsoft</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Identity.Client" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DriveMigrator.Core\DriveMigrator.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="DriveMigrator.Providers.Tests" />
+  </ItemGroup>
+</Project>

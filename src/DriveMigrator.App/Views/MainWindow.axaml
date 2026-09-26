@@ -6,8 +6,15 @@
         Title="Drive Migrator"
         Width="1100" Height="700"
         MinWidth="800" MinHeight="500">
-  <Grid Margin="16" RowDefinitions="Auto,*">
-    <TextBlock Grid.Row="0" FontSize="20" FontWeight="SemiBold" Text="Drive Migrator" />
-    <TextBlock Grid.Row="1" Margin="0,8,0,0" Text="{Binding Status}" />
-  </Grid>
+  <DockPanel Margin="16">
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto">
+      <TextBlock FontSize="20" FontWeight="SemiBold" Text="Drive Migrator" VerticalAlignment="Center" />
+      <Button Grid.Column="1" Content="Settings" Command="{Binding OpenSettingsCommand}" />
+    </Grid>
+    <Border Margin="0,12,0,0" Padding="12,8" CornerRadius="4" VerticalAlignment="Top"
+            Background="{DynamicResource BannerWarningBrush}" IsVisible="{Binding NeedsAttention}">
+      <TextBlock TextWrapping="Wrap" Text="{Binding Status}" />
+    </Border>
+    <TextBlock Margin="0,12,0,0" TextWrapping="Wrap" Text="{Binding Status}" IsVisible="{Binding !NeedsAttention}" />
+  </DockPanel>
 </Window>

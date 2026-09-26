@@ -17,5 +17,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DriveMigrator.Core\DriveMigrator.Core.csproj" />
+    <ProjectReference Include="..\DriveMigrator.Infrastructure\DriveMigrator.Infrastructure.csproj" />
+    <ProjectReference Include="..\DriveMigrator.Providers.Google\DriveMigrator.Providers.Google.csproj" />
+    <ProjectReference Include="..\DriveMigrator.Providers.Microsoft\DriveMigrator.Providers.Microsoft.csproj" />
   </ItemGroup>
 </Project>

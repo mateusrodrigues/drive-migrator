@@ -1,4 +1,4 @@
-namespace DriveMigrator.Core;
+namespace DriveMigrator.Core.Accounts;
 
 /// <summary>An authenticated account and the capabilities it can use.</summary>
 public interface IAccountSession

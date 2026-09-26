@@ -1,4 +1,5 @@
 using System.Text;
+using DriveMigrator.Core.Accounts;
 using DriveMigrator.Core.Calendar;
 using DriveMigrator.Core.Contacts;
 using DriveMigrator.Core.Drive;
@@ -16,14 +17,14 @@ public class FakeProviderTests
     {
         var provider = new FakeCloudProvider();
 
-        var first = await provider.SignInAsync(Ct);
-        var second = await provider.SignInAsync(Ct);
+        var first = await provider.SignInAsync(cancellationToken: Ct);
+        var second = await provider.SignInAsync(cancellationToken: Ct);
 
         Assert.NotEqual(first.Account.AccountId, second.Account.AccountId);
         Assert.Same(first, await provider.RestoreSessionAsync(first.Account, Ct));
 
         await provider.SignOutAsync(first.Account, Ct);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => provider.RestoreSessionAsync(first.Account, Ct));
+        await Assert.ThrowsAsync<ReauthenticationRequiredException>(() => provider.RestoreSessionAsync(first.Account, Ct));
     }
 
     [Fact]
