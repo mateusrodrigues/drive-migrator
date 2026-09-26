@@ -1,6 +1,7 @@
 using System.Threading.Channels;
 using DriveMigrator.Core;
 using DriveMigrator.Core.Accounts;
+using DriveMigrator.Core.Calendar;
 using DriveMigrator.Core.Contacts;
 using DriveMigrator.Core.Drive;
 using DriveMigrator.Core.Mail;
@@ -134,6 +135,13 @@ public sealed class TransferEngine(TransferStore store, int parallelism = 4)
                 CapabilityKind.Contacts => await ContactsCopier.CopyAsync(
                     (IContactsCapability)sourceCapability,
                     (IContactsCapability)destinationCapability,
+                    item.Source,
+                    item.TargetParent,
+                    run.Job.Options,
+                    cancellationToken).ConfigureAwait(false),
+                CapabilityKind.Calendar => await CalendarCopier.CopyAsync(
+                    (ICalendarCapability)sourceCapability,
+                    (ICalendarCapability)destinationCapability,
                     item.Source,
                     item.TargetParent,
                     run.Job.Options,

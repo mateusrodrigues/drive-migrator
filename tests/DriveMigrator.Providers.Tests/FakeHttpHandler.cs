@@ -21,7 +21,8 @@ internal sealed class FakeHttpHandler(Func<RecordedRequest, HttpResponseMessage>
             request.Headers.Authorization?.ToString(),
             request.Content is null ? null : await request.Content.ReadAsByteArrayAsync(cancellationToken),
             request.Content?.Headers.ContentRange?.ToString(),
-            request.Content?.Headers.ContentType?.MediaType);
+            request.Content?.Headers.ContentType?.MediaType,
+            request.Headers.TryGetValues("Prefer", out var prefer) ? string.Join(", ", prefer) : null);
         lock (Requests)
         {
             Requests.Add(recorded);
@@ -32,7 +33,7 @@ internal sealed class FakeHttpHandler(Func<RecordedRequest, HttpResponseMessage>
 }
 
 /// <summary>A copy of a request taken before HttpClient disposes it.</summary>
-internal sealed record RecordedRequest(HttpMethod Method, Uri RequestUri, string? Authorization, byte[]? Body, string? ContentRange, string? ContentType)
+internal sealed record RecordedRequest(HttpMethod Method, Uri RequestUri, string? Authorization, byte[]? Body, string? ContentRange, string? ContentType, string? Prefer = null)
 {
     public string Url => RequestUri.AbsoluteUri;
 

@@ -1,9 +1,11 @@
 using DriveMigrator.Core;
 using DriveMigrator.Core.Accounts;
+using DriveMigrator.Providers.Google.Calendar;
 using DriveMigrator.Providers.Google.Contacts;
 using DriveMigrator.Providers.Google.Drive;
 using DriveMigrator.Providers.Google.Mail;
 using Google.Apis.Auth.OAuth2;
+using Google.Apis.Calendar.v3;
 using Google.Apis.Drive.v3;
 using Google.Apis.Gmail.v1;
 using Google.Apis.PeopleService.v1;
@@ -23,6 +25,7 @@ public sealed class GoogleAccountSession : IAccountSession
         [
             new GoogleDriveCapability(new DriveService(services)),
             new GmailCapability(new GmailService(services)),
+            new GoogleCalendarCapability(new CalendarService(services)),
             new GoogleContactsCapability(new PeopleServiceService(services)),
         ];
     }
@@ -32,6 +35,5 @@ public sealed class GoogleAccountSession : IAccountSession
     /// <summary>Refreshing credential used to construct Google API service clients.</summary>
     public UserCredential Credential { get; }
 
-    // The Calendar capability is added in a later phase.
     public IReadOnlyList<ICapability> Capabilities { get; }
 }

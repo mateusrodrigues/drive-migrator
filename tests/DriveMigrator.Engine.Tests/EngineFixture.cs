@@ -11,7 +11,7 @@ public sealed class EngineFixture : IDisposable
 
     public EngineFixture()
     {
-        Provider = new FakeCloudProvider("fake", "Fake", CapabilityKind.Drive, CapabilityKind.Mail, CapabilityKind.Contacts);
+        Provider = new FakeCloudProvider("fake", "Fake", CapabilityKind.Drive, CapabilityKind.Mail, CapabilityKind.Contacts, CapabilityKind.Calendar);
         Source = Provider.AddAccount("source@example.com");
         Destination = Provider.AddAccount("dest@example.com");
         StorePath = Path.Combine(_directory, "transfers.db");

@@ -85,4 +85,27 @@ public class MailTreeTests
         Assert.Contains("email address", vm.DuplicateOptionLabel, StringComparison.Ordinal);
         Assert.True(vm.ToOptions().SkipDuplicates);
     }
+
+    [AvaloniaFact]
+    public void OptionsDialog_AsksAboutAttendeesOnlyWhenTheDestinationWouldInviteThem()
+    {
+        var outlookLike = new FakeCloudProvider().AddAccount();
+        outlookLike.Calendar.ImportNotifiesAttendees = true;
+        var googleLike = new FakeCloudProvider().AddAccount();
+        TransferItem[] items = [new(CapabilityKind.Calendar, null), new(CapabilityKind.Mail, null)];
+        TransferTarget[] targets = [new(CapabilityKind.Calendar, null), new(CapabilityKind.Mail, null)];
+
+        var toOutlook = new TransferOptionsViewModel("s", new TransferRequest(_account, outlookLike, items, targets));
+        var toGoogle = new TransferOptionsViewModel("s", new TransferRequest(_account, googleLike, items, targets));
+
+        Assert.True(toOutlook.AskAboutAttendees);
+        Assert.False(toOutlook.AttendeesKeptSilently);
+        Assert.Equal(Core.Calendar.AttendeeHandling.EmbedInDescription, toOutlook.ToOptions().Calendar.AttendeeHandling);
+        toOutlook.KeepAttendees = true;
+        Assert.Equal(Core.Calendar.AttendeeHandling.KeepAttendees, toOutlook.ToOptions().Calendar.AttendeeHandling);
+
+        Assert.False(toGoogle.AskAboutAttendees);
+        Assert.True(toGoogle.AttendeesKeptSilently);
+        Assert.Equal("Skip messages and events that are already in the destination, so running a copy again adds no duplicates.", toGoogle.DuplicateOptionLabel);
+    }
 }

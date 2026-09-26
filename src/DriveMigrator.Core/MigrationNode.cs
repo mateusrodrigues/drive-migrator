@@ -57,4 +57,7 @@ public enum ContainerRole
 
     /// <summary>The main contact list ("Contacts" in Outlook, all contacts in Google).</summary>
     DefaultContacts,
+
+    /// <summary>The main calendar ("Calendar" in Outlook, the primary calendar in Google).</summary>
+    DefaultCalendar,
 }

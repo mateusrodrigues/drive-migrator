@@ -26,8 +26,8 @@ internal sealed class GraphClient(
 
     private readonly Func<TimeSpan, CancellationToken, Task> _delay = delay ?? Task.Delay;
 
-    public Task<T> GetAsync<T>(string url, CancellationToken cancellationToken)
-        => SendJsonAsync<T>(HttpMethod.Get, url, body: null, cancellationToken);
+    public Task<T> GetAsync<T>(string url, CancellationToken cancellationToken, string? prefer = null)
+        => SendJsonAsync<T>(HttpMethod.Get, url, body: null, cancellationToken, prefer);
 
     /// <summary>GET that returns null instead of throwing when Graph answers 404.</summary>
     public async Task<T?> GetOrDefaultAsync<T>(string url, CancellationToken cancellationToken)
@@ -44,10 +44,23 @@ internal sealed class GraphClient(
     }
 
     /// <summary>Sends an optional JSON body and reads a JSON response.</summary>
-    public async Task<T> SendJsonAsync<T>(HttpMethod method, string url, object? body, CancellationToken cancellationToken)
+    /// <summary>
+    /// Sends an optional JSON body and reads a JSON response. <paramref name="prefer"/> is sent as a Prefer header,
+    /// e.g. <c>outlook.timezone="UTC"</c>.
+    /// </summary>
+    public async Task<T> SendJsonAsync<T>(HttpMethod method, string url, object? body, CancellationToken cancellationToken, string? prefer = null)
     {
         using var response = await SendAsync(
-            () => new HttpRequestMessage(method, url) { Content = body is null ? null : JsonContent.Create(body, options: JsonOptions) },
+            () =>
+            {
+                var request = new HttpRequestMessage(method, url) { Content = body is null ? null : JsonContent.Create(body, options: JsonOptions) };
+                if (prefer is not null)
+                {
+                    request.Headers.TryAddWithoutValidation("Prefer", prefer);
+                }
+
+                return request;
+            },
             cancellationToken).ConfigureAwait(false);
         return await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken).ConfigureAwait(false)
             ?? throw new GraphException(response.StatusCode, "emptyResponse", $"Graph returned an empty body for {url}.");
@@ -113,12 +126,12 @@ internal sealed class GraphClient(
     internal static TimeSpan BackOff(int attempt) => TimeSpan.FromSeconds(Math.Min(60, Math.Pow(2, attempt)));
 
     /// <summary>Streams every item of a collection, following <c>@odata.nextLink</c> page by page.</summary>
-    public async IAsyncEnumerable<T> GetPagedAsync<T>(string url, [EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<T> GetPagedAsync<T>(string url, [EnumeratorCancellation] CancellationToken cancellationToken, string? prefer = null)
     {
         string? next = url;
         while (next is not null)
         {
-            var page = await GetAsync<GraphPage<T>>(next, cancellationToken).ConfigureAwait(false);
+            var page = await GetAsync<GraphPage<T>>(next, cancellationToken, prefer).ConfigureAwait(false);
             foreach (var item in page.Value)
             {
                 yield return item;

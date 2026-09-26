@@ -46,6 +46,23 @@
           </CheckBox>
         </StackPanel>
 
+        <StackPanel IsVisible="{Binding HasCalendar}" Spacing="6">
+          <TextBlock Classes="heading" Text="Calendar" />
+          <StackPanel IsVisible="{Binding AskAboutAttendees}" Spacing="6">
+            <TextBlock TextWrapping="Wrap" Text="Events with attendees: Outlook sends an invitation to every attendee of an event it creates." />
+            <RadioButton GroupName="attendees" IsChecked="{Binding EmbedAttendees}">
+              <TextBlock TextWrapping="Wrap" Text="List the organizer and attendees in the event description (nobody is notified)" />
+            </RadioButton>
+            <RadioButton GroupName="attendees" IsChecked="{Binding KeepAttendees}">
+              <TextBlock TextWrapping="Wrap" Text="Keep them as real attendees (Outlook will email them invitations)" />
+            </RadioButton>
+          </StackPanel>
+          <TextBlock Classes="muted" IsVisible="{Binding AttendeesKeptSilently}"
+                     Text="Attendees are kept; Google doesn't notify them when events are imported." />
+          <TextBlock Classes="muted"
+                     Text="Recurring events keep their pattern; deleted occurrences stay deleted and changed occurrences are copied as separate events. The main calendars map to each other; other calendars are recreated. Event attachments and online meeting links are not copied." />
+        </StackPanel>
+
         <StackPanel IsVisible="{Binding HasContacts}" Spacing="6">
           <TextBlock Classes="heading" Text="Contacts" />
           <TextBlock Classes="muted"

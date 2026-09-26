@@ -188,9 +188,9 @@ public sealed partial class NodeViewModel : ViewModelBase
                 loaded.Add(new NodeViewModel(Capability, node, this, _selectionChanged, _lifetime));
             }
 
-            // Mail keeps the service's order (Inbox first, newest messages first). Elsewhere: folders first, then
-            // names in the user's collation order (this is for display, not identity).
-            if (Capability.Kind != CapabilityKind.Mail)
+            // Mail and calendars keep the service's order (Inbox or primary calendar first, newest first). Files and
+            // contacts: folders first, then names in the user's collation order (this is for display, not identity).
+            if (Capability.Kind is CapabilityKind.Drive or CapabilityKind.Contacts)
             {
 #pragma warning disable CA1309
                 loaded.Sort(static (a, b) => a.IsContainer != b.IsContainer

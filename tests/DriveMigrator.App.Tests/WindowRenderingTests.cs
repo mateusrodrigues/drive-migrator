@@ -139,6 +139,15 @@ public sealed class WindowRenderingTests : IDisposable
         Capture(optionsWindow, "transfer-options-contacts");
         optionsWindow.Close();
 
+        // Calendar options towards Outlook (asks about attendees).
+        target.Calendar.ImportNotifiesAttendees = true;
+        target.Calendar.DisplayName = "Outlook Calendar";
+        var calendarRequest = new Core.Transfers.TransferRequest(source, target, [new(Core.CapabilityKind.Calendar, null)], [new(Core.CapabilityKind.Calendar, null)]);
+        var calendarWindow = new TransferOptionsWindow { DataContext = new TransferOptionsViewModel("From ada@gmail.com · Google to ada@outlook.com · Microsoft\n\n• Google Calendar: everything → Outlook Calendar", calendarRequest) };
+        calendarWindow.Show();
+        Capture(calendarWindow, "transfer-options-calendar");
+        calendarWindow.Close();
+
         // A finished job with one failure, and a paused one, in the transfers panel.
         target.Drive.OnUpload = (name, _) => name.StartsWith("2025", StringComparison.Ordinal) ? throw new IOException("The service is unavailable.") : Task.CompletedTask;
         var request = MainWindowViewModel.BuildRequest(vm.Left, vm.Right, out _)!;

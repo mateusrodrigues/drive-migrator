@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using DriveMigrator.Core;
 using DriveMigrator.Core.Accounts;
+using DriveMigrator.Core.Calendar;
 using DriveMigrator.Core.Drive;
 using DriveMigrator.Core.Transfers;
 
@@ -27,6 +28,9 @@ public sealed partial class TransferOptionsViewModel : ViewModelBase
 
         HasMail = kinds.Contains(CapabilityKind.Mail);
         HasContacts = kinds.Contains(CapabilityKind.Contacts);
+        HasCalendar = kinds.Contains(CapabilityKind.Calendar);
+        AskAboutAttendees = HasCalendar
+            && request.Destination.GetCapability(CapabilityKind.Calendar) is ICalendarCapability { ImportNotifiesAttendees: true };
         HasFiles = kinds.Contains(CapabilityKind.Drive);
 
         CanConvert = kinds.Contains(CapabilityKind.Drive)
@@ -43,15 +47,51 @@ public sealed partial class TransferOptionsViewModel : ViewModelBase
 
     public bool HasContacts { get; }
 
-    /// <summary>The "skip what's already there" option applies to messages and contacts.</summary>
-    public bool ShowDuplicateOption => HasMail || HasContacts;
+    public bool HasCalendar { get; }
 
-    public string DuplicateOptionLabel => (HasMail, HasContacts) switch
+    /// <summary>The destination would send invitations to attendees (Outlook), so the user decides per job.</summary>
+    public bool AskAboutAttendees { get; }
+
+    public bool AttendeesKeptSilently => HasCalendar && !AskAboutAttendees;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(KeepAttendees))]
+    public partial bool EmbedAttendees { get; set; } = true;
+
+    public bool KeepAttendees
     {
-        (true, true) => "Skip messages and contacts that are already in the destination (so running a copy again adds no duplicates)",
-        (true, false) => "Skip messages that are already in the destination folder (so running a copy again adds no duplicates)",
-        _ => "Skip contacts that are already there, matched by email address, or by name when there is none (so running a copy again adds no duplicates)",
-    };
+        get => !EmbedAttendees;
+        set => EmbedAttendees = !value;
+    }
+
+    /// <summary>The "skip what's already there" option applies to messages, contacts and events.</summary>
+    public bool ShowDuplicateOption => HasMail || HasContacts || HasCalendar;
+
+    public string DuplicateOptionLabel
+    {
+        get
+        {
+            List<string> kinds = [];
+            if (HasMail)
+            {
+                kinds.Add("messages");
+            }
+
+            if (HasContacts)
+            {
+                kinds.Add("contacts");
+            }
+
+            if (HasCalendar)
+            {
+                kinds.Add("events");
+            }
+
+            var list = kinds.Count == 1 ? kinds[0] : $"{string.Join(", ", kinds[..^1])} and {kinds[^1]}";
+            var contactsNote = HasContacts ? " Contacts match by email address, or by name when there is none." : string.Empty;
+            return $"Skip {list} that are already in the destination, so running a copy again adds no duplicates.{contactsNote}";
+        }
+    }
 
     [ObservableProperty]
     public partial bool SkipDuplicates { get; set; } = true;
@@ -96,6 +136,7 @@ public sealed partial class TransferOptionsViewModel : ViewModelBase
         NativeExports = NativeDocuments.ToDictionary(d => d.Type.MimeType, d => d.Selected.Format),
         ConvertToNativeFormat = CanConvert && ConvertToNativeFormat,
         SkipDuplicates = SkipDuplicates,
+        Calendar = new CalendarImportOptions(EmbedAttendees ? AttendeeHandling.EmbedInDescription : AttendeeHandling.KeepAttendees),
     };
 
     private void Select(bool selected, ConflictPolicy policy)
