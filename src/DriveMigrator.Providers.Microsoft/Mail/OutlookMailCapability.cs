@@ -20,19 +20,19 @@ internal sealed class OutlookMailCapability(GraphClient graph) : IMailCapability
     private const string FolderSelect = "$select=id,displayName,childFolderCount,totalItemCount";
     private const string MessageSelect = "$select=id,subject,from,receivedDateTime,isRead,flag,internetMessageId";
 
-    private static readonly (string WellKnownName, MailFolderRole? Role)[] WellKnownFolders =
+    private static readonly (string WellKnownName, ContainerRole? Role)[] WellKnownFolders =
     [
-        ("inbox", MailFolderRole.Inbox),
-        ("sentitems", MailFolderRole.Sent),
-        ("junkemail", MailFolderRole.Junk),
-        ("deleteditems", MailFolderRole.Deleted),
-        ("archive", MailFolderRole.Archive),
+        ("inbox", ContainerRole.Inbox),
+        ("sentitems", ContainerRole.Sent),
+        ("junkemail", ContainerRole.Junk),
+        ("deleteditems", ContainerRole.Deleted),
+        ("archive", ContainerRole.Archive),
         ("drafts", null),
         ("outbox", null),
     ];
 
     private readonly Lock _gate = new();
-    private Task<Dictionary<string, (MailFolderRole? Role, MailFolder Folder)>>? _wellKnown;
+    private Task<Dictionary<string, (ContainerRole? Role, MailFolder Folder)>>? _wellKnown;
 
     public CapabilityKind Kind => CapabilityKind.Mail;
 
@@ -73,7 +73,7 @@ internal sealed class OutlookMailCapability(GraphClient graph) : IMailCapability
         }
     }
 
-    public async Task<MigrationNode?> GetSpecialFolderAsync(MailFolderRole role, CancellationToken cancellationToken = default)
+    public async Task<MigrationNode?> GetSpecialContainerAsync(ContainerRole role, CancellationToken cancellationToken = default)
     {
         var wellKnown = await GetWellKnownAsync(cancellationToken).ConfigureAwait(false);
         var match = wellKnown.Values.FirstOrDefault(f => f.Role == role);
@@ -139,7 +139,7 @@ internal sealed class OutlookMailCapability(GraphClient graph) : IMailCapability
         };
     }
 
-    private static MigrationNode FolderNode(MailFolder folder, MailFolderRole? role)
+    private static MigrationNode FolderNode(MailFolder folder, ContainerRole? role)
         => new($"me/mailFolders/{folder.Id}", folder.DisplayName, NodeKind.MailFolder) { Role = role };
 
     /// <summary>Adds an attachment too large for the create request, using a Graph attachment upload session.</summary>
@@ -199,7 +199,7 @@ internal sealed class OutlookMailCapability(GraphClient graph) : IMailCapability
     }
 
     /// <summary>Resolves the well-known folders once per session (Graph v1.0 doesn't mark them in folder listings).</summary>
-    private Task<Dictionary<string, (MailFolderRole? Role, MailFolder Folder)>> GetWellKnownAsync(CancellationToken cancellationToken)
+    private Task<Dictionary<string, (ContainerRole? Role, MailFolder Folder)>> GetWellKnownAsync(CancellationToken cancellationToken)
     {
         lock (_gate)
         {
@@ -212,9 +212,9 @@ internal sealed class OutlookMailCapability(GraphClient graph) : IMailCapability
         }
     }
 
-    private async Task<Dictionary<string, (MailFolderRole? Role, MailFolder Folder)>> LoadWellKnownAsync(CancellationToken cancellationToken)
+    private async Task<Dictionary<string, (ContainerRole? Role, MailFolder Folder)>> LoadWellKnownAsync(CancellationToken cancellationToken)
     {
-        var result = new Dictionary<string, (MailFolderRole?, MailFolder)>();
+        var result = new Dictionary<string, (ContainerRole?, MailFolder)>();
         foreach (var (name, role) in WellKnownFolders)
         {
             try

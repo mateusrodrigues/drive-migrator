@@ -1,6 +1,7 @@
 using System.Threading.Channels;
 using DriveMigrator.Core;
 using DriveMigrator.Core.Accounts;
+using DriveMigrator.Core.Contacts;
 using DriveMigrator.Core.Drive;
 using DriveMigrator.Core.Mail;
 
@@ -130,6 +131,13 @@ public sealed class TransferEngine(TransferStore store, int parallelism = 4)
                     run.Job.Options,
                     progress,
                     cancellationToken).ConfigureAwait(false),
+                CapabilityKind.Contacts => await ContactsCopier.CopyAsync(
+                    (IContactsCapability)sourceCapability,
+                    (IContactsCapability)destinationCapability,
+                    item.Source,
+                    item.TargetParent,
+                    run.Job.Options,
+                    cancellationToken).ConfigureAwait(false),
                 _ => throw new NotSupportedException($"Copying {item.Kind.ToString().ToLowerInvariant()} is not supported yet."),
             };
 
@@ -153,9 +161,9 @@ public sealed class TransferEngine(TransferStore store, int parallelism = 4)
     }
 
     /// <summary>
-    /// Finds the destination for a source container: at the top level a well-known mail folder maps to its
-    /// counterpart (Gmail "Sent" → Outlook "Sent Items"); otherwise a same-named folder is reused (merged into)
-    /// or created.
+    /// Finds the destination for a source container: at the top level a well-known container maps to its
+    /// counterpart (Gmail "Sent" → Outlook "Sent Items", Google "All contacts" → Outlook "Contacts"); otherwise a
+    /// same-named folder is reused (merged into) or created.
     /// </summary>
     private static async Task<MigrationNode> EnsureContainerAsync(
         ICapability destination,
@@ -166,8 +174,7 @@ public sealed class TransferEngine(TransferStore store, int parallelism = 4)
     {
         if (parent is null
             && source.Role is { } role
-            && destination is IMailCapability mail
-            && await mail.GetSpecialFolderAsync(role, cancellationToken).ConfigureAwait(false) is { } special)
+            && await destination.GetSpecialContainerAsync(role, cancellationToken).ConfigureAwait(false) is { } special)
         {
             return special;
         }

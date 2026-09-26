@@ -18,13 +18,13 @@ internal static class MailCopier
     {
         // Messages always live in a folder; loose messages copied to the top level go to the Inbox.
         var folder = targetFolder
-            ?? await destination.GetSpecialFolderAsync(MailFolderRole.Inbox, cancellationToken).ConfigureAwait(false)
+            ?? await destination.GetSpecialContainerAsync(ContainerRole.Inbox, cancellationToken).ConfigureAwait(false)
             ?? throw new InvalidOperationException("The destination mailbox has no Inbox; choose a destination folder.");
 
         var content = await source.ReadMessageAsync(message, cancellationToken).ConfigureAwait(false);
         await using (content.ConfigureAwait(false))
         {
-            if (options.SkipExistingMessages
+            if (options.SkipDuplicates
                 && content.InternetMessageId is { Length: > 0 } messageId
                 && await destination.ContainsMessageAsync(folder, messageId, cancellationToken).ConfigureAwait(false))
             {

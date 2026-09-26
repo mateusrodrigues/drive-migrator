@@ -34,7 +34,7 @@ public class GmailTests
         var nodes = await Create(handler).GetChildrenAsync(null, Ct).ToListAsync(Ct);
 
         Assert.Equal(["Inbox", "Sent", "Spam", "Trash", "All Mail", "Travel/2024", "Work"], nodes.Select(n => n.Name));
-        Assert.Equal(MailFolderRole.Archive, nodes.Single(n => n.Id == GmailCapability.AllMail).Role);
+        Assert.Equal(ContainerRole.Archive, nodes.Single(n => n.Id == GmailCapability.AllMail).Role);
     }
 
     [Fact]

@@ -17,13 +17,13 @@ internal sealed class GmailCapability : IMailCapability
     internal const string AllMail = "ALL";
     private const string Me = "me";
 
-    private static readonly (string Id, string Name, MailFolderRole Role)[] SystemFolders =
+    private static readonly (string Id, string Name, ContainerRole Role)[] SystemFolders =
     [
-        ("INBOX", "Inbox", MailFolderRole.Inbox),
-        ("SENT", "Sent", MailFolderRole.Sent),
-        ("SPAM", "Spam", MailFolderRole.Junk),
-        ("TRASH", "Trash", MailFolderRole.Deleted),
-        (AllMail, "All Mail", MailFolderRole.Archive),
+        ("INBOX", "Inbox", ContainerRole.Inbox),
+        ("SENT", "Sent", ContainerRole.Sent),
+        ("SPAM", "Spam", ContainerRole.Junk),
+        ("TRASH", "Trash", ContainerRole.Deleted),
+        (AllMail, "All Mail", ContainerRole.Archive),
     ];
 
     /// <summary>Names Gmail reserves; user labels can't use them.</summary>
@@ -67,7 +67,7 @@ internal sealed class GmailCapability : IMailCapability
         return valid.Length == 0 || ReservedNames.Contains(valid) ? $"{valid} (imported)".Trim() : valid;
     }
 
-    public async Task<MigrationNode?> GetSpecialFolderAsync(MailFolderRole role, CancellationToken cancellationToken = default)
+    public async Task<MigrationNode?> GetSpecialContainerAsync(ContainerRole role, CancellationToken cancellationToken = default)
     {
         await Task.CompletedTask.ConfigureAwait(false);
         return SystemFolders.Where(f => f.Role == role).Select(f => SystemNode(f.Id, f.Name, f.Role)).FirstOrDefault();
@@ -317,7 +317,7 @@ internal sealed class GmailCapability : IMailCapability
 
     private static string? ParentPath(string name) => name.LastIndexOf('/') is var i and > 0 ? name[..i] : null;
 
-    private static MigrationNode SystemNode(string id, string name, MailFolderRole role) => new(id, name, NodeKind.MailFolder) { Role = role };
+    private static MigrationNode SystemNode(string id, string name, ContainerRole role) => new(id, name, NodeKind.MailFolder) { Role = role };
 
     private static MigrationNode MessageNode(string id) => new(id, $"Message {id}", NodeKind.MailMessage) { MimeType = "message/rfc822" };
 }

@@ -89,7 +89,7 @@ public class MailRoundTripTests
         var source = new Session("google", gmail);
         var destination = new Session("microsoft", outlook);
         var message = new MigrationNode("g1", "Daily Briefing — September 25, 2026", NodeKind.MailMessage) { Detail = "Morning Brew", Size = 1234, ModifiedAt = DateTimeOffset.UtcNow, MimeType = "message/rfc822" };
-        var target = destinationFolder ? new MigrationNode("me/mailFolders/IN", "Inbox", NodeKind.MailFolder) { Role = MailFolderRole.Inbox } : null;
+        var target = destinationFolder ? new MigrationNode("me/mailFolders/IN", "Inbox", NodeKind.MailFolder) { Role = ContainerRole.Inbox } : null;
         var job = store.CreateJob("t", new("google", "a"), new("microsoft", "b"), Core.Transfers.TransferOptions.Default,
             [new(CapabilityKind.Mail, target)], [new Engine.NewItem(CapabilityKind.Mail, message, target, message.Name)]);
         var observer = new Observer();

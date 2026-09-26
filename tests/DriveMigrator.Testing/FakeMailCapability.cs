@@ -16,7 +16,7 @@ public sealed class FakeMailCapability() : InMemoryCapability(CapabilityKind.Mai
         => Add(folder, MessageNode(subject, mime.Length, receivedAt), new StoredMessage(mime, isRead, isFlagged, receivedAt, messageId));
 
     /// <summary>Adds a top-level well-known folder such as the Inbox.</summary>
-    public MigrationNode AddSpecialFolder(MailFolderRole role, string name)
+    public MigrationNode AddSpecialFolder(ContainerRole role, string name)
         => Add(null, new MigrationNode(NewId(), name, NodeKind.MailFolder) { Role = role }, payload: null);
 
     public bool IsRead(MigrationNode message) => GetPayload<StoredMessage>(message).IsRead;
@@ -25,7 +25,7 @@ public sealed class FakeMailCapability() : InMemoryCapability(CapabilityKind.Mai
 
     public string? GetMessageId(MigrationNode message) => GetPayload<StoredMessage>(message).MessageId;
 
-    public async Task<MigrationNode?> GetSpecialFolderAsync(MailFolderRole role, CancellationToken cancellationToken = default)
+    public async Task<MigrationNode?> GetSpecialContainerAsync(ContainerRole role, CancellationToken cancellationToken = default)
     {
         await foreach (var node in GetChildrenAsync(null, cancellationToken).ConfigureAwait(false))
         {

@@ -43,6 +43,10 @@ public interface ICapability
         }
     }
 
+    /// <summary>The account's well-known container for <paramref name="role"/>, or null if it has none.</summary>
+    Task<MigrationNode?> GetSpecialContainerAsync(ContainerRole role, CancellationToken cancellationToken = default)
+        => Task.FromResult<MigrationNode?>(null);
+
     /// <summary>
     /// Adjusts a name to what this service accepts (e.g. OneDrive forbids characters like ':' and '?' that Google
     /// allows). The engine uses the adjusted name both to detect existing items and to create new ones.

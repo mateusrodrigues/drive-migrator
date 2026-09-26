@@ -30,7 +30,7 @@ public class OutlookMailTests
         var nodes = await Create(handler).GetChildrenAsync(null, Ct).ToListAsync(Ct);
 
         Assert.Equal(["Inbox", "Sent Items", "Work"], nodes.Select(n => n.Name));
-        Assert.Equal([MailFolderRole.Inbox, MailFolderRole.Sent, (MailFolderRole?)null], nodes.Select(n => n.Role));
+        Assert.Equal([ContainerRole.Inbox, ContainerRole.Sent, (ContainerRole?)null], nodes.Select(n => n.Role));
         Assert.Equal("me/mailFolders/IN", nodes[0].Id);
     }
 

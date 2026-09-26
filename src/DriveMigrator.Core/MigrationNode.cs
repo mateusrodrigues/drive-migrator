@@ -27,8 +27,8 @@ public sealed record MigrationNode(string Id, string Name, NodeKind Kind)
     /// <summary>Secondary text for display, e.g. a message's sender.</summary>
     public string? Detail { get; init; }
 
-    /// <summary>For mail folders: the well-known folder this is (Inbox, Sent...), used to map folders between services.</summary>
-    public MailFolderRole? Role { get; init; }
+    /// <summary>The well-known container this is (Inbox, Sent, the default contact list...), used to map containers between services.</summary>
+    public ContainerRole? Role { get; init; }
 
     /// <summary>
     /// Nodes are equal when they identify the same item (same <see cref="Id"/> and <see cref="Kind"/>), even if
@@ -43,12 +43,18 @@ public sealed record MigrationNode(string Id, string Name, NodeKind Kind)
 /// <summary>A format a provider-native document can be exported to.</summary>
 public sealed record ExportFormat(string MimeType, string FileExtension, string DisplayName);
 
-/// <summary>Well-known mail folders that exist in every mailbox under service-specific names.</summary>
-public enum MailFolderRole
+/// <summary>
+/// Well-known containers that exist in every account under service-specific names. Values are persisted in
+/// transfer jobs, so only append.
+/// </summary>
+public enum ContainerRole
 {
     Inbox,
     Sent,
     Junk,
     Deleted,
     Archive,
+
+    /// <summary>The main contact list ("Contacts" in Outlook, all contacts in Google).</summary>
+    DefaultContacts,
 }

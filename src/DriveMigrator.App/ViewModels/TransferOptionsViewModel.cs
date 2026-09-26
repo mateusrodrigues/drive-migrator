@@ -26,6 +26,7 @@ public sealed partial class TransferOptionsViewModel : ViewModelBase
         }
 
         HasMail = kinds.Contains(CapabilityKind.Mail);
+        HasContacts = kinds.Contains(CapabilityKind.Contacts);
         HasFiles = kinds.Contains(CapabilityKind.Drive);
 
         CanConvert = kinds.Contains(CapabilityKind.Drive)
@@ -40,8 +41,20 @@ public sealed partial class TransferOptionsViewModel : ViewModelBase
 
     public bool HasMail { get; }
 
+    public bool HasContacts { get; }
+
+    /// <summary>The "skip what's already there" option applies to messages and contacts.</summary>
+    public bool ShowDuplicateOption => HasMail || HasContacts;
+
+    public string DuplicateOptionLabel => (HasMail, HasContacts) switch
+    {
+        (true, true) => "Skip messages and contacts that are already in the destination (so running a copy again adds no duplicates)",
+        (true, false) => "Skip messages that are already in the destination folder (so running a copy again adds no duplicates)",
+        _ => "Skip contacts that are already there, matched by email address, or by name when there is none (so running a copy again adds no duplicates)",
+    };
+
     [ObservableProperty]
-    public partial bool SkipExistingMessages { get; set; } = true;
+    public partial bool SkipDuplicates { get; set; } = true;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ConflictSkip), nameof(ConflictOverwrite), nameof(ConflictKeepBoth))]
@@ -82,7 +95,7 @@ public sealed partial class TransferOptionsViewModel : ViewModelBase
         Conflicts = Conflicts,
         NativeExports = NativeDocuments.ToDictionary(d => d.Type.MimeType, d => d.Selected.Format),
         ConvertToNativeFormat = CanConvert && ConvertToNativeFormat,
-        SkipExistingMessages = SkipExistingMessages,
+        SkipDuplicates = SkipDuplicates,
     };
 
     private void Select(bool selected, ConflictPolicy policy)

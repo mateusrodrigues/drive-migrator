@@ -19,12 +19,12 @@ public sealed class MailTransferTests : IDisposable
     [Fact]
     public async Task WellKnownFoldersMapToTheirCounterparts_OthersAreCreated()
     {
-        var sent = Src.AddSpecialFolder(MailFolderRole.Sent, "SENT");
+        var sent = Src.AddSpecialFolder(ContainerRole.Sent, "SENT");
         Src.AddMessage(sent, "Hello", "a"u8.ToArray(), messageId: "<1@x>");
         var work = Src.AddContainer(null, "Work");
         var project = Src.AddContainer(work, "Project");
         Src.AddMessage(project, "Plan", "b"u8.ToArray(), messageId: "<2@x>");
-        var dstSent = Dst.AddSpecialFolder(MailFolderRole.Sent, "Sent Items");
+        var dstSent = Dst.AddSpecialFolder(ContainerRole.Sent, "Sent Items");
 
         await _f.RunAsync(_f.CreateJob([sent, work], kind: CapabilityKind.Mail));
 
@@ -40,9 +40,9 @@ public sealed class MailTransferTests : IDisposable
     [Fact]
     public async Task RoleMappingOnlyAppliesAtTheTopLevel()
     {
-        var inbox = Src.AddSpecialFolder(MailFolderRole.Inbox, "INBOX");
+        var inbox = Src.AddSpecialFolder(ContainerRole.Inbox, "INBOX");
         Src.AddMessage(inbox, "Hi", [1]);
-        Dst.AddSpecialFolder(MailFolderRole.Inbox, "Inbox");
+        Dst.AddSpecialFolder(ContainerRole.Inbox, "Inbox");
         var archive = Dst.AddContainer(null, "Old account");
 
         await _f.RunAsync(_f.CreateJob([inbox], archive, kind: CapabilityKind.Mail));
@@ -82,7 +82,7 @@ public sealed class MailTransferTests : IDisposable
         Assert.Equal(3, (await Dst.GetChildrenAsync(dstFolder, Ct).ToListAsync(Ct)).Count);
         Assert.Contains(_f.Observer.Finished, f => f.Status == ItemStatus.Skipped && f.Name == "one");
 
-        await _f.RunAsync(_f.CreateJob([folder], options: new TransferOptions { SkipExistingMessages = false }, kind: CapabilityKind.Mail));
+        await _f.RunAsync(_f.CreateJob([folder], options: new TransferOptions { SkipDuplicates = false }, kind: CapabilityKind.Mail));
         Assert.Equal(5, (await Dst.GetChildrenAsync(dstFolder, Ct).ToListAsync(Ct)).Count);
     }
 
@@ -91,7 +91,7 @@ public sealed class MailTransferTests : IDisposable
     {
         var folder = Src.AddContainer(null, "F");
         var message = Src.AddMessage(folder, "one", [1]);
-        var inbox = Dst.AddSpecialFolder(MailFolderRole.Inbox, "Inbox");
+        var inbox = Dst.AddSpecialFolder(ContainerRole.Inbox, "Inbox");
 
         await _f.RunAsync(_f.CreateJob([message], kind: CapabilityKind.Mail));
 

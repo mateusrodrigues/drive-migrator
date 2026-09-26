@@ -39,11 +39,21 @@
           <TextBlock Classes="muted" Text="Folders with the same name are always merged." />
         </StackPanel>
 
+        <StackPanel IsVisible="{Binding ShowDuplicateOption}" Spacing="6">
+          <TextBlock Classes="heading" Text="Already copied" />
+          <CheckBox IsChecked="{Binding SkipDuplicates}">
+            <TextBlock TextWrapping="Wrap" Text="{Binding DuplicateOptionLabel}" />
+          </CheckBox>
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding HasContacts}" Spacing="6">
+          <TextBlock Classes="heading" Text="Contacts" />
+          <TextBlock Classes="muted"
+                     Text="Google &quot;All contacts&quot; and Outlook &quot;Contacts&quot; map to each other; Google groups become Outlook contact folders and the other way round. Details Outlook has no place for (a fourth email, extra addresses or websites) are added to the contact's notes. Photos are not copied." />
+        </StackPanel>
+
         <StackPanel IsVisible="{Binding HasMail}" Spacing="6">
           <TextBlock Classes="heading" Text="Mail" />
-          <CheckBox IsChecked="{Binding SkipExistingMessages}">
-            <TextBlock TextWrapping="Wrap" Text="Skip messages that are already in the destination folder (so running a copy again adds no duplicates)" />
-          </CheckBox>
           <TextBlock Classes="muted"
                      Text="Messages keep their dates and read and flagged state. Inbox, Sent, Junk/Spam, Deleted/Trash and Archive/All Mail copied to the top level go into their counterparts; other folders and labels are recreated. Folders with the same name are merged." />
         </StackPanel>

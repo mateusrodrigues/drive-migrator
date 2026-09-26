@@ -15,7 +15,7 @@ public class MailTreeTests
     [AvaloniaFact]
     public async Task LargeFolder_ShowsFirstPage_AndCheckingVisibleMessagesIsNotTheWholeFolder()
     {
-        var inbox = Mail.AddSpecialFolder(MailFolderRole.Inbox, "Inbox");
+        var inbox = Mail.AddSpecialFolder(ContainerRole.Inbox, "Inbox");
         for (var i = 0; i < NodeViewModel.MailBrowseLimit + 5; i++)
         {
             Mail.AddMessage(inbox, $"m{i}", [1]);
@@ -48,8 +48,8 @@ public class MailTreeTests
     [AvaloniaFact]
     public async Task MailKeepsServiceOrderAndShowsSender()
     {
-        Mail.AddSpecialFolder(MailFolderRole.Inbox, "Inbox");
-        Mail.AddSpecialFolder(MailFolderRole.Sent, "Sent");
+        Mail.AddSpecialFolder(ContainerRole.Inbox, "Inbox");
+        Mail.AddSpecialFolder(ContainerRole.Sent, "Sent");
         Mail.AddContainer(null, "Archive 2019");
 
         var root = NodeViewModel.CreateRoot(Mail, () => { }, CancellationToken.None);
@@ -64,11 +64,25 @@ public class MailTreeTests
         var target = new FakeCloudProvider().AddAccount();
         var mailOnly = new TransferRequest(_account, target, [new(CapabilityKind.Mail, null)], [new(CapabilityKind.Mail, null)]);
 
-        var vm = new TransferOptionsViewModel("summary", mailOnly) { SkipExistingMessages = false };
+        var vm = new TransferOptionsViewModel("summary", mailOnly) { SkipDuplicates = false };
 
-        Assert.True(vm.HasMail);
+        Assert.True(vm.HasMail && vm.ShowDuplicateOption);
+        Assert.False(vm.HasContacts);
         Assert.False(vm.HasFiles);
         Assert.False(vm.HasNativeDocuments);
-        Assert.False(vm.ToOptions().SkipExistingMessages);
+        Assert.False(vm.ToOptions().SkipDuplicates);
+    }
+
+    [AvaloniaFact]
+    public void OptionsDialog_ContactsGetDuplicateOptionAndNote()
+    {
+        var target = new FakeCloudProvider().AddAccount();
+        var contacts = new TransferRequest(_account, target, [new(CapabilityKind.Contacts, null)], [new(CapabilityKind.Contacts, null)]);
+
+        var vm = new TransferOptionsViewModel("summary", contacts);
+
+        Assert.True(vm.HasContacts && vm.ShowDuplicateOption);
+        Assert.Contains("email address", vm.DuplicateOptionLabel, StringComparison.Ordinal);
+        Assert.True(vm.ToOptions().SkipDuplicates);
     }
 }

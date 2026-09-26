@@ -6,6 +6,7 @@
     <PackageReference Include="Google.Apis.Auth" />
     <PackageReference Include="Google.Apis.Drive.v3" />
     <PackageReference Include="Google.Apis.Gmail.v1" />
+    <PackageReference Include="Google.Apis.PeopleService.v1" />
     <PackageReference Include="MimeKit" />
   </ItemGroup>
   <ItemGroup>

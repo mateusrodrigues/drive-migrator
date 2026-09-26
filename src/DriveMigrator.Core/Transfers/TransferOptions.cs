@@ -19,8 +19,11 @@ public sealed record TransferOptions
     /// <summary>Convert files to the destination's native format when it supports that (e.g. .docx → Google Docs).</summary>
     public bool ConvertToNativeFormat { get; init; }
 
-    /// <summary>Skip messages whose Message-ID is already in the destination folder, so re-running a copy adds no duplicates.</summary>
-    public bool SkipExistingMessages { get; init; } = true;
+    /// <summary>
+    /// Skip messages whose Message-ID is already in the destination folder, and contacts matching an existing one
+    /// (same email, or same name when there is no email), so re-running a copy adds no duplicates.
+    /// </summary>
+    public bool SkipDuplicates { get; init; } = true;
 
     public CalendarImportOptions Calendar { get; init; } = CalendarImportOptions.Default;
 }

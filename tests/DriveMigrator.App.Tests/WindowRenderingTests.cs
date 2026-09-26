@@ -85,8 +85,8 @@ public sealed class WindowRenderingTests : IDisposable
         source.Drive.AddFile(null, "notes.txt", new byte[1200]);
 
         source.Mail.DisplayName = "Gmail";
-        var inbox = source.Mail.AddSpecialFolder(Core.MailFolderRole.Inbox, "Inbox");
-        source.Mail.AddSpecialFolder(Core.MailFolderRole.Sent, "Sent");
+        var inbox = source.Mail.AddSpecialFolder(Core.ContainerRole.Inbox, "Inbox");
+        source.Mail.AddSpecialFolder(Core.ContainerRole.Sent, "Sent");
         source.Mail.AddContainer(null, "Receipts");
 
         var target = _microsoft.AddAccount("ada@outlook.com");
@@ -130,6 +130,14 @@ public sealed class WindowRenderingTests : IDisposable
         await inboxNode.LoadChildrenAsync();
         inboxNode.Children[0].IsChecked = true;
         Capture(window, "main-mail");
+
+        // Contacts options dialog.
+        target.Contacts.DisplayName = "Outlook Contacts";
+        var contactsRequest = new Core.Transfers.TransferRequest(source, target, [new(Core.CapabilityKind.Contacts, null)], [new(Core.CapabilityKind.Contacts, null)]);
+        var optionsWindow = new TransferOptionsWindow { DataContext = new TransferOptionsViewModel("From ada@gmail.com · Google to ada@outlook.com · Microsoft\n\n• Google Contacts: everything → Outlook Contacts", contactsRequest) };
+        optionsWindow.Show();
+        Capture(optionsWindow, "transfer-options-contacts");
+        optionsWindow.Close();
 
         // A finished job with one failure, and a paused one, in the transfers panel.
         target.Drive.OnUpload = (name, _) => name.StartsWith("2025", StringComparison.Ordinal) ? throw new IOException("The service is unavailable.") : Task.CompletedTask;
