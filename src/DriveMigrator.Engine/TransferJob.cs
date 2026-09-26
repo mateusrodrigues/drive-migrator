@@ -1,14 +1,23 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 
 namespace DriveMigrator.Engine;
 
-/// <summary>Live state of one job for the UI. Aggregates engine callbacks and raises throttled change notifications.</summary>
+/// <summary>
+/// Live state of one job for the UI. Aggregates engine callbacks and raises throttled change notifications: at most
+/// one per interval, but the last change in a burst is always delivered (shortly after it happens).
+/// </summary>
 public sealed class TransferJob : ITransferObserver
 {
     private static readonly long NotifyInterval = Stopwatch.Frequency / 5;
 
+    private static readonly TimeSpan TrailingDelay = TimeSpan.FromMilliseconds(250);
+
     private readonly Lock _gate = new();
+    private readonly Lock _notifyGate = new();
+    private readonly ConcurrentDictionary<long, string> _inFlight = new();
     private long _lastNotify;
+    private bool _trailingScheduled;
     private int _pending;
     private int _done;
     private int _skipped;
@@ -36,7 +45,11 @@ public sealed class TransferJob : ITransferObserver
     /// <summary>Why the job can't run right now (e.g. an account needs reconnecting), if anything.</summary>
     public string? Problem { get; private set; }
 
-    public string? CurrentItem { get; private set; }
+    /// <summary>Names of the items being worked on right now (several run in parallel), oldest first.</summary>
+    public IReadOnlyList<string> CurrentItems => [.. _inFlight.OrderBy(kv => kv.Key).Select(kv => kv.Value)];
+
+    /// <summary>The oldest item still in progress, or null when idle.</summary>
+    public string? CurrentItem => CurrentItems is [var first, ..] ? first : null;
 
     public JobCounts Counts
     {
@@ -55,12 +68,13 @@ public sealed class TransferJob : ITransferObserver
 
     void ITransferObserver.ItemStarted(ItemRecord item)
     {
-        CurrentItem = item.Name;
+        _inFlight[item.Id] = item.Name;
         Notify();
     }
 
     void ITransferObserver.ItemFinished(ItemRecord item, ItemStatus status, string? message)
     {
+        _inFlight.TryRemove(item.Id, out _);
         lock (_gate)
         {
             _pending--;
@@ -103,7 +117,8 @@ public sealed class TransferJob : ITransferObserver
         Problem = problem;
         if (status != JobStatus.Running)
         {
-            CurrentItem = null;
+            // Cancelled items never report finishing.
+            _inFlight.Clear();
         }
 
         Notify(force: true);
@@ -112,16 +127,33 @@ public sealed class TransferJob : ITransferObserver
     private void Notify(bool force = false)
     {
         var now = Stopwatch.GetTimestamp();
-        var last = Interlocked.Read(ref _lastNotify);
-        if (!force && now - last < NotifyInterval)
+        lock (_notifyGate)
         {
-            return;
+            if (!force && now - _lastNotify < NotifyInterval)
+            {
+                // Too soon: make sure this state still reaches the UI once the burst is over.
+                if (!_trailingScheduled)
+                {
+                    _trailingScheduled = true;
+                    _ = Task.Delay(TrailingDelay).ContinueWith(_ => NotifyTrailing(), TaskScheduler.Default);
+                }
+
+                return;
+            }
+
+            _lastNotify = now;
         }
 
-        if (force || Interlocked.CompareExchange(ref _lastNotify, now, last) == last)
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void NotifyTrailing()
+    {
+        lock (_notifyGate)
         {
-            Interlocked.Exchange(ref _lastNotify, now);
-            Changed?.Invoke(this, EventArgs.Empty);
+            _trailingScheduled = false;
         }
+
+        Notify(force: true);
     }
 }

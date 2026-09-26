@@ -78,8 +78,9 @@ public sealed partial class TransferJobViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     public partial string Details { get; private set; } = string.Empty;
 
+    /// <summary>"Working on big.iso and 2 others", or null when idle.</summary>
     [ObservableProperty]
-    public partial string? CurrentItem { get; private set; }
+    public partial string? WorkingOn { get; private set; }
 
     [ObservableProperty]
     public partial string? Problem { get; private set; }
@@ -114,7 +115,14 @@ public sealed partial class TransferJobViewModel : ViewModelBase, IDisposable
         IsPaused = Job.Status == JobStatus.Paused;
         HasFailures = counts.Failed > 0;
         Problem = Job.Problem;
-        CurrentItem = IsRunning ? Job.CurrentItem : null;
+        var current = IsRunning ? Job.CurrentItems : [];
+        WorkingOn = current.Count switch
+        {
+            0 => null,
+            1 => $"Working on {current[0]}",
+            2 => $"Working on {current[0]} and 1 other",
+            _ => $"Working on {current[0]} and {current.Count - 1} others",
+        };
         StatusText = Job.Status switch
         {
             JobStatus.Running => "Copying…",

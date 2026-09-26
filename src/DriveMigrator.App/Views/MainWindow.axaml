@@ -51,7 +51,7 @@
                     </Grid>
                     <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" />
                     <TextBlock FontSize="12" Opacity="0.65" TextTrimming="CharacterEllipsis"
-                               Text="{Binding CurrentItem, StringFormat='Working on {0}'}" IsVisible="{Binding IsRunning}" />
+                               Text="{Binding WorkingOn}" IsVisible="{Binding WorkingOn, Converter={x:Static ObjectConverters.IsNotNull}}" />
                     <TextBlock FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource StatusErrorBrush}"
                                Text="{Binding Problem}" IsVisible="{Binding Problem, Converter={x:Static ObjectConverters.IsNotNull}}" />
                     <ItemsControl ItemsSource="{Binding Failures}" IsVisible="{Binding ShowFailures}">
