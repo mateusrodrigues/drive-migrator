@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DriveMigrator.App/DriveMigrator.App.csproj" />
+    <Project Path="src/DriveMigrator.Core/DriveMigrator.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DriveMigrator.Core.Tests/DriveMigrator.Core.Tests.csproj" />
+    <Project Path="tests/DriveMigrator.Testing/DriveMigrator.Testing.csproj" />
+  </Folder>
+</Solution>
