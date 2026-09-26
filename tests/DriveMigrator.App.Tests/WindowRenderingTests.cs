@@ -84,8 +84,14 @@ public sealed class WindowRenderingTests : IDisposable
         source.Drive.AddContainer(null, "Photos");
         source.Drive.AddFile(null, "notes.txt", new byte[1200]);
 
+        source.Mail.DisplayName = "Gmail";
+        var inbox = source.Mail.AddSpecialFolder(Core.MailFolderRole.Inbox, "Inbox");
+        source.Mail.AddSpecialFolder(Core.MailFolderRole.Sent, "Sent");
+        source.Mail.AddContainer(null, "Receipts");
+
         var target = _microsoft.AddAccount("ada@outlook.com");
         target.Drive.DisplayName = "OneDrive";
+        target.Mail.DisplayName = "Outlook Mail";
         target.Drive.AddContainer(null, "Documents");
         target.Drive.AddContainer(null, "Pictures");
         _accountStore.Accounts = [source.Account, target.Account];
@@ -111,6 +117,19 @@ public sealed class WindowRenderingTests : IDisposable
         vm.Right.SelectedNode = right.Children[0];
 
         Capture(window, "main");
+
+        // Mail tree, collapsed drive.
+        left.IsExpanded = false;
+        var mail = vm.Left.Roots.Single(r => r.Name == "Gmail");
+        mail.IsExpanded = true;
+        await mail.LoadChildrenAsync();
+        source.Mail.AddMessage(inbox, "Flight confirmation", [1]);
+        source.Mail.AddMessage(inbox, "Team lunch on Friday", [1]);
+        var inboxNode = mail.Children[0];
+        inboxNode.IsExpanded = true;
+        await inboxNode.LoadChildrenAsync();
+        inboxNode.Children[0].IsChecked = true;
+        Capture(window, "main-mail");
 
         // A finished job with one failure, and a paused one, in the transfers panel.
         target.Drive.OnUpload = (name, _) => name.StartsWith("2025", StringComparison.Ordinal) ? throw new IOException("The service is unavailable.") : Task.CompletedTask;

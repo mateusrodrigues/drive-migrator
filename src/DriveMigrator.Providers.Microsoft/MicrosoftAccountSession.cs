@@ -2,6 +2,7 @@ using DriveMigrator.Core;
 using DriveMigrator.Core.Accounts;
 using DriveMigrator.Providers.Microsoft.Drive;
 using DriveMigrator.Providers.Microsoft.Graph;
+using DriveMigrator.Providers.Microsoft.Mail;
 using Microsoft.Identity.Client;
 
 namespace DriveMigrator.Providers.Microsoft;
@@ -18,12 +19,12 @@ public sealed class MicrosoftAccountSession : IAccountSession
         _msalAccount = msalAccount;
 
         var graph = new GraphClient(http, GetAccessTokenAsync);
-        Capabilities = [new OneDriveCapability(graph)];
+        Capabilities = [new OneDriveCapability(graph), new OutlookMailCapability(graph)];
     }
 
     public AccountInfo Account { get; }
 
-    // Outlook Mail, Calendar and Contacts capabilities are added in later phases.
+    // Calendar and Contacts capabilities are added in later phases.
     public IReadOnlyList<ICapability> Capabilities { get; }
 
     /// <summary>Gets a Microsoft Graph access token, refreshing it silently when needed.</summary>

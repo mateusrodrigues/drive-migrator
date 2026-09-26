@@ -2,6 +2,7 @@ using System.Threading.Channels;
 using DriveMigrator.Core;
 using DriveMigrator.Core.Accounts;
 using DriveMigrator.Core.Drive;
+using DriveMigrator.Core.Mail;
 
 namespace DriveMigrator.Engine;
 
@@ -95,7 +96,7 @@ public sealed class TransferEngine(TransferStore store, int parallelism = 4)
             {
                 var target = item.Source is null
                     ? item.TargetParent
-                    : await EnsureContainerAsync(destinationCapability, index, item.TargetParent, item.Source.Name, cancellationToken).ConfigureAwait(false);
+                    : await EnsureContainerAsync(destinationCapability, index, item.TargetParent, item.Source, cancellationToken).ConfigureAwait(false);
 
                 var children = new List<NewItem>();
                 await foreach (var child in sourceCapability.GetChildrenAsync(item.Source, cancellationToken).ConfigureAwait(false))
@@ -116,6 +117,14 @@ public sealed class TransferEngine(TransferStore store, int parallelism = 4)
                     (IDriveCapability)sourceCapability,
                     (IDriveCapability)destinationCapability,
                     index,
+                    item.Source,
+                    item.TargetParent,
+                    run.Job.Options,
+                    progress,
+                    cancellationToken).ConfigureAwait(false),
+                CapabilityKind.Mail => await MailCopier.CopyAsync(
+                    (IMailCapability)sourceCapability,
+                    (IMailCapability)destinationCapability,
                     item.Source,
                     item.TargetParent,
                     run.Job.Options,
@@ -143,15 +152,27 @@ public sealed class TransferEngine(TransferStore store, int parallelism = 4)
         return [];
     }
 
-    /// <summary>Reuses a same-named destination folder (merging into it) or creates one.</summary>
+    /// <summary>
+    /// Finds the destination for a source container: at the top level a well-known mail folder maps to its
+    /// counterpart (Gmail "Sent" → Outlook "Sent Items"); otherwise a same-named folder is reused (merged into)
+    /// or created.
+    /// </summary>
     private static async Task<MigrationNode> EnsureContainerAsync(
         ICapability destination,
         TargetIndex index,
         MigrationNode? parent,
-        string sourceName,
+        MigrationNode source,
         CancellationToken cancellationToken)
     {
-        var name = destination.ToValidName(sourceName);
+        if (parent is null
+            && source.Role is { } role
+            && destination is IMailCapability mail
+            && await mail.GetSpecialFolderAsync(role, cancellationToken).ConfigureAwait(false) is { } special)
+        {
+            return special;
+        }
+
+        var name = destination.ToValidName(source.Name);
         var claim = await index.ClaimAsync(parent, name, cancellationToken).ConfigureAwait(false);
         if (claim.Existing is { } existing)
         {

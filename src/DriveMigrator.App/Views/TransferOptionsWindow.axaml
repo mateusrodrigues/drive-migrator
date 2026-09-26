@@ -31,11 +31,22 @@
         <SelectableTextBlock Text="{Binding Summary}" TextWrapping="Wrap" />
         <TextBlock Classes="muted" Text="Nothing is deleted or changed in the source account." />
 
-        <TextBlock Classes="heading" Text="If a file with the same name already exists" />
-        <RadioButton GroupName="conflicts" IsChecked="{Binding ConflictSkip}" Content="Skip it (keep the existing file)" />
-        <RadioButton GroupName="conflicts" IsChecked="{Binding ConflictOverwrite}" Content="Overwrite the existing file" />
-        <RadioButton GroupName="conflicts" IsChecked="{Binding ConflictKeepBoth}" Content="Keep both (copy as &quot;name (1)&quot;)" />
-        <TextBlock Classes="muted" Text="Folders with the same name are always merged." />
+        <StackPanel IsVisible="{Binding HasFiles}" Spacing="6">
+          <TextBlock Classes="heading" Text="If a file with the same name already exists" />
+          <RadioButton GroupName="conflicts" IsChecked="{Binding ConflictSkip}" Content="Skip it (keep the existing file)" />
+          <RadioButton GroupName="conflicts" IsChecked="{Binding ConflictOverwrite}" Content="Overwrite the existing file" />
+          <RadioButton GroupName="conflicts" IsChecked="{Binding ConflictKeepBoth}" Content="Keep both (copy as &quot;name (1)&quot;)" />
+          <TextBlock Classes="muted" Text="Folders with the same name are always merged." />
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding HasMail}" Spacing="6">
+          <TextBlock Classes="heading" Text="Mail" />
+          <CheckBox IsChecked="{Binding SkipExistingMessages}">
+            <TextBlock TextWrapping="Wrap" Text="Skip messages that are already in the destination folder (so running a copy again adds no duplicates)" />
+          </CheckBox>
+          <TextBlock Classes="muted"
+                     Text="Messages keep their dates and read and flagged state. Inbox, Sent, Junk/Spam, Deleted/Trash and Archive/All Mail copied to the top level go into their counterparts; other folders and labels are recreated. Folders with the same name are merged." />
+        </StackPanel>
 
         <StackPanel IsVisible="{Binding HasNativeDocuments}" Spacing="6">
           <TextBlock Classes="heading" Text="Google documents" />

@@ -22,6 +22,28 @@ public interface ICapability
     Task<MigrationNode> CreateContainerAsync(MigrationNode? parent, string name, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Lists children for display in the tree: at most <paramref name="maxItems"/> of them, possibly with richer
+    /// names and details than <see cref="GetChildrenAsync"/> (which the transfer engine uses and which must list
+    /// everything as cheaply as possible). Containers come first.
+    /// </summary>
+    async IAsyncEnumerable<MigrationNode> BrowseChildrenAsync(
+        MigrationNode? parent,
+        int maxItems,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var count = 0;
+        await foreach (var child in GetChildrenAsync(parent, cancellationToken).ConfigureAwait(false))
+        {
+            if (count++ == maxItems)
+            {
+                yield break;
+            }
+
+            yield return child;
+        }
+    }
+
+    /// <summary>
     /// Adjusts a name to what this service accepts (e.g. OneDrive forbids characters like ':' and '?' that Google
     /// allows). The engine uses the adjusted name both to detect existing items and to create new ones.
     /// </summary>

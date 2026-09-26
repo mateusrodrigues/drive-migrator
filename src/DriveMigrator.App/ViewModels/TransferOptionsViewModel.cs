@@ -25,12 +25,23 @@ public sealed partial class TransferOptionsViewModel : ViewModelBase
             }
         }
 
+        HasMail = kinds.Contains(CapabilityKind.Mail);
+        HasFiles = kinds.Contains(CapabilityKind.Drive);
+
         CanConvert = kinds.Contains(CapabilityKind.Drive)
             && request.Destination.GetCapability(CapabilityKind.Drive) is IDriveCapability { CanConvertToNativeFormat: true };
         ConvertLabel = $"Convert Word, Excel, PowerPoint and OpenDocument files into native {request.Destination.GetCapability(CapabilityKind.Drive)?.DisplayName} documents";
     }
 
     public string Summary { get; }
+
+    /// <summary>File conflict choices only matter when drive items are being copied.</summary>
+    public bool HasFiles { get; }
+
+    public bool HasMail { get; }
+
+    [ObservableProperty]
+    public partial bool SkipExistingMessages { get; set; } = true;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ConflictSkip), nameof(ConflictOverwrite), nameof(ConflictKeepBoth))]
@@ -71,6 +82,7 @@ public sealed partial class TransferOptionsViewModel : ViewModelBase
         Conflicts = Conflicts,
         NativeExports = NativeDocuments.ToDictionary(d => d.Type.MimeType, d => d.Selected.Format),
         ConvertToNativeFormat = CanConvert && ConvertToNativeFormat,
+        SkipExistingMessages = SkipExistingMessages,
     };
 
     private void Select(bool selected, ConflictPolicy policy)

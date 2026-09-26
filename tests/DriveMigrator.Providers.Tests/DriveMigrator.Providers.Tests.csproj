@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <PackageReference Include="MimeKit" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\src\DriveMigrator.Providers.Google\DriveMigrator.Providers.Google.csproj" />
     <ProjectReference Include="..\..\src\DriveMigrator.Providers.Microsoft\DriveMigrator.Providers.Microsoft.csproj" />
   </ItemGroup>

@@ -11,7 +11,7 @@ public sealed class EngineFixture : IDisposable
 
     public EngineFixture()
     {
-        Provider = new FakeCloudProvider("fake", "Fake", CapabilityKind.Drive);
+        Provider = new FakeCloudProvider("fake", "Fake", CapabilityKind.Drive, CapabilityKind.Mail);
         Source = Provider.AddAccount("source@example.com");
         Destination = Provider.AddAccount("dest@example.com");
         StorePath = Path.Combine(_directory, "transfers.db");
@@ -32,15 +32,15 @@ public sealed class EngineFixture : IDisposable
 
     public static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    public JobRecord CreateJob(IEnumerable<MigrationNode?> selection, MigrationNode? targetFolder = null, TransferOptions? options = null)
+    public JobRecord CreateJob(IEnumerable<MigrationNode?> selection, MigrationNode? targetFolder = null, TransferOptions? options = null, CapabilityKind kind = CapabilityKind.Drive)
     {
-        var items = selection.Select(n => new NewItem(CapabilityKind.Drive, n, targetFolder, n?.Name ?? "Drive")).ToList();
+        var items = selection.Select(n => new NewItem(kind, n, targetFolder, n?.Name ?? kind.ToString())).ToList();
         return Store.CreateJob(
             "test",
             new AccountRef("fake", Source.Account.AccountId),
             new AccountRef("fake", Destination.Account.AccountId),
             options ?? TransferOptions.Default,
-            [new TransferTarget(CapabilityKind.Drive, targetFolder)],
+            [new TransferTarget(kind, targetFolder)],
             items);
     }
 

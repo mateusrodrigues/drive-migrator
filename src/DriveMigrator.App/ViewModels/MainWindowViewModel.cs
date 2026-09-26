@@ -158,7 +158,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
             var parts = new List<string>();
             AddCount(list.Count(n => n.IsContainer), "folder");
             AddCount(list.Count(n => !n.IsContainer && n.Node!.RequiresExport), "native document");
-            AddCount(list.Count(n => !n.IsContainer && !n.Node!.RequiresExport), "file");
+            AddCount(list.Count(n => n.Node?.Kind == NodeKind.MailMessage), "message");
+            AddCount(list.Count(n => n.Node?.Kind == NodeKind.File && !n.Node.RequiresExport), "file");
             return string.Join(", ", parts);
 
             void AddCount(int count, string noun)

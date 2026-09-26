@@ -11,6 +11,9 @@ public sealed class MailMessageContent(Stream mime) : IAsyncDisposable
 
     public DateTimeOffset? ReceivedAt { get; init; }
 
+    /// <summary>The Message-ID header, used to recognise a message that was already copied.</summary>
+    public string? InternetMessageId { get; init; }
+
     /// <summary>
     /// Every folder/label the message lives in at the source. Gmail messages can carry several labels;
     /// folder-based providers report exactly one.

@@ -24,6 +24,12 @@ public sealed record MigrationNode(string Id, string Name, NodeKind Kind)
 
     public bool RequiresExport => ExportFormats.Count > 0;
 
+    /// <summary>Secondary text for display, e.g. a message's sender.</summary>
+    public string? Detail { get; init; }
+
+    /// <summary>For mail folders: the well-known folder this is (Inbox, Sent...), used to map folders between services.</summary>
+    public MailFolderRole? Role { get; init; }
+
     /// <summary>
     /// Nodes are equal when they identify the same item (same <see cref="Id"/> and <see cref="Kind"/>), even if
     /// metadata such as name or size differs between two reads.
@@ -36,3 +42,13 @@ public sealed record MigrationNode(string Id, string Name, NodeKind Kind)
 
 /// <summary>A format a provider-native document can be exported to.</summary>
 public sealed record ExportFormat(string MimeType, string FileExtension, string DisplayName);
+
+/// <summary>Well-known mail folders that exist in every mailbox under service-specific names.</summary>
+public enum MailFolderRole
+{
+    Inbox,
+    Sent,
+    Junk,
+    Deleted,
+    Archive,
+}

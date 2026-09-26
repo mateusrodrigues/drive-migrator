@@ -4,9 +4,7 @@ using System.Text.Json;
 using DriveMigrator.Core;
 using DriveMigrator.Core.Drive;
 using Google.Apis.Drive.v3;
-using Google.Apis.Http;
 using Google.Apis.Upload;
-using Google.Apis.Util;
 using GoogleFile = Google.Apis.Drive.v3.Data.File;
 
 namespace DriveMigrator.Providers.Google.Drive;
@@ -44,12 +42,7 @@ internal sealed class GoogleDriveCapability : IDriveCapability
     {
         _drive = drive;
 
-        // Retry throttling (429) and server errors with exponential back-off, for API calls and raw downloads alike.
-        drive.HttpClient.MessageHandler.AddUnsuccessfulResponseHandler(new BackOffHandler(
-            new BackOffHandler.Initializer(new ExponentialBackOff(TimeSpan.FromMilliseconds(500), 6))
-            {
-                HandleUnsuccessfulResponseFunc = r => r.StatusCode is HttpStatusCode.TooManyRequests or >= HttpStatusCode.InternalServerError,
-            }));
+        GoogleBackOff.Install(drive);
     }
 
     private static readonly ExportFormat Pdf = new("application/pdf", ".pdf", "PDF");

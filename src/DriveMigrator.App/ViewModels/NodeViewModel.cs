@@ -15,8 +15,17 @@ public sealed partial class NodeViewModel : ViewModelBase
 {
     private readonly Action _selectionChanged;
     private readonly CancellationToken _lifetime;
+    /// <summary>
+    /// Most items loaded into one tree level. Mail folders can hold tens of thousands of messages and showing each
+    /// costs a request on some services, so they show the newest page only; checking the folder still copies all.
+    /// </summary>
+    internal const int MailBrowseLimit = 200;
+
+    internal const int BrowseLimit = 5000;
+
     private bool? _isChecked = false;
     private bool _loaded;
+    private bool _truncated;
     private Task? _loading;
 
     private NodeViewModel(ICapability capability, MigrationNode? node, NodeViewModel? parent, Action selectionChanged, CancellationToken lifetime)
@@ -61,6 +70,7 @@ public sealed partial class NodeViewModel : ViewModelBase
     /// <summary>Secondary text: file size, or a note that a native document will be exported.</summary>
     public string? Detail => Node switch
     {
+        { Detail: { } detail } => detail,
         { RequiresExport: true } => "native document",
         { IsContainer: false, Size: { } size } => FormatSize(size),
         _ => null,
@@ -163,23 +173,41 @@ public sealed partial class NodeViewModel : ViewModelBase
         IsLoading = true;
         try
         {
+            var limit = Capability.Kind == CapabilityKind.Mail ? MailBrowseLimit : BrowseLimit;
             var loaded = new List<NodeViewModel>();
-            await foreach (var node in Capability.GetChildrenAsync(Node, _lifetime))
+            var items = 0;
+            _truncated = false;
+            await foreach (var node in Capability.BrowseChildrenAsync(Node, limit + 1, _lifetime))
             {
+                if (!node.IsContainer && ++items > limit)
+                {
+                    _truncated = true;
+                    break;
+                }
+
                 loaded.Add(new NodeViewModel(Capability, node, this, _selectionChanged, _lifetime));
             }
 
-            // Folders first, then names in the user's collation order (this is for display, not identity).
+            // Mail keeps the service's order (Inbox first, newest messages first). Elsewhere: folders first, then
+            // names in the user's collation order (this is for display, not identity).
+            if (Capability.Kind != CapabilityKind.Mail)
+            {
 #pragma warning disable CA1309
-            loaded.Sort(static (a, b) => a.IsContainer != b.IsContainer
-                ? a.IsContainer ? -1 : 1
-                : string.Compare(a.Name, b.Name, StringComparison.CurrentCultureIgnoreCase));
+                loaded.Sort(static (a, b) => a.IsContainer != b.IsContainer
+                    ? a.IsContainer ? -1 : 1
+                    : string.Compare(a.Name, b.Name, StringComparison.CurrentCultureIgnoreCase));
 #pragma warning restore CA1309
+            }
 
             // Children appearing under a checked or unchecked folder take its state.
             foreach (var child in loaded)
             {
                 child._isChecked = _isChecked ?? false;
+            }
+
+            if (_truncated)
+            {
+                loaded.Add(Placeholder($"Showing the first {limit} items. Check \"{Name}\" itself to copy everything in it."));
             }
 
             Children = [.. loaded];
@@ -251,7 +279,8 @@ public sealed partial class NodeViewModel : ViewModelBase
             return;
         }
 
-        var state = states.Count == 1 ? states[0] : null;
+        // When only part of the children is shown, checking all of those still isn't the whole container.
+        var state = states.Count == 1 && !(_truncated && states[0] == true) ? states[0] : null;
         if (state == _isChecked)
         {
             _selectionChanged();
