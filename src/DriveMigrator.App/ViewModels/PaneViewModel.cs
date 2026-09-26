@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using DriveMigrator.Core;
 using DriveMigrator.Core.Accounts;
 using DriveMigrator.Core.Transfers;
@@ -108,8 +109,15 @@ public sealed partial class PaneViewModel(string name) : ViewModelBase, IDisposa
         return node;
     }
 
-    partial void OnSelectedAccountChanged(AccountOptionViewModel? value)
+    partial void OnSelectedAccountChanged(AccountOptionViewModel? value) => RebuildTree();
+
+    /// <summary>Reloads the tree from the service, e.g. to see what a transfer copied. Checks are cleared.</summary>
+    [RelayCommand]
+    private void Refresh() => RebuildTree();
+
+    private void RebuildTree()
     {
+        var value = SelectedAccount;
         _treeLifetime.Cancel();
         _treeLifetime.Dispose();
         _treeLifetime = new CancellationTokenSource();

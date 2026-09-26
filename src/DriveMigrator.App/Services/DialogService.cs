@@ -23,6 +23,9 @@ internal sealed class DialogService(IServiceProvider services) : IDialogService
     public Task ShowMessageAsync(string title, string message)
         => new ConfirmDialog(title, message, "OK", showCancel: false).ShowDialog(Owner());
 
+    public Task<bool> ShowTransferOptionsAsync(TransferOptionsViewModel options)
+        => new TransferOptionsWindow { DataContext = options }.ShowDialog<bool>(Owner());
+
     private static Window Owner()
     {
         var desktop = (IClassicDesktopStyleApplicationLifetime)Application.Current!.ApplicationLifetime!;

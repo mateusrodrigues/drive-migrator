@@ -13,6 +13,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     private readonly InMemoryAccountStore _store = new();
     private readonly AccountManager _accounts;
     private readonly FakeDialogService _dialogs = new();
+    private readonly TempTransfers _transfers;
     private readonly MainWindowViewModel _vm;
     private readonly FakeAccountSession _source;
     private readonly FakeAccountSession _target;
@@ -21,7 +22,8 @@ public sealed class MainWindowViewModelTests : IDisposable
     {
         var registry = new ProviderRegistry([_google, _contactsOnly]);
         _accounts = new AccountManager(registry, _store);
-        _vm = new MainWindowViewModel(_accounts, registry, _dialogs);
+        _transfers = new TempTransfers(_accounts);
+        _vm = new MainWindowViewModel(_accounts, registry, _dialogs, _transfers.Manager);
 
         _source = _google.AddAccount("me@gmail.com");
         var photos = _source.Drive.AddContainer(null, "Photos");
@@ -36,6 +38,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     public void Dispose()
     {
         _vm.Dispose();
+        _transfers.Dispose();
         _accounts.Dispose();
     }
 
@@ -127,18 +130,48 @@ public sealed class MainWindowViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task CopyCommand_OnlyPreviews()
+    public async Task CopyCommand_CancelledOptions_StartNothing()
     {
         await LoadAsync(_source, _target);
         _vm.Left.Roots[0].IsChecked = true;
-        var targetCountBefore = _target.Drive.Count;
+        _dialogs.StartTransfers = false;
+        var before = _target.Drive.Count;
 
         await _vm.CopyLeftToRightCommand.ExecuteAsync(null);
 
-        var (title, message) = Assert.Single(_dialogs.Messages);
-        Assert.Equal("Transfer preview", title);
-        Assert.Contains("Nothing has been copied", message, StringComparison.Ordinal);
-        Assert.Equal(targetCountBefore, _target.Drive.Count);
+        Assert.Single(_dialogs.OptionsShown);
+        Assert.Empty(_transfers.Manager.Jobs);
+        Assert.Equal(before, _target.Drive.Count);
+    }
+
+    [AvaloniaFact]
+    public async Task CopyCommand_StartsTransferIntoDestinationFolder()
+    {
+        await LoadAsync(_source, _target);
+        var left = await ExpandAsync(_vm.Left.Roots[0]);
+        left.Children.Single(c => c.Name == "Photos").IsChecked = true;
+        var right = await ExpandAsync(_vm.Right.Roots[0]);
+        _vm.Right.SelectedNode = right.Children.Single(c => c.Name == "Archive");
+        _dialogs.ConfigureOptions = o => o.ConflictKeepBoth = true;
+
+        await _vm.CopyLeftToRightCommand.ExecuteAsync(null);
+
+        var job = Assert.Single(_vm.Transfers.Jobs);
+        Assert.Equal("Drive (me@gmail.com) → Drive / Archive (work@example.com)", job.Title);
+        Assert.Equal(Core.Transfers.ConflictPolicy.KeepBoth, job.Job.Record.Options.Conflicts);
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (job.Job.Status == Engine.JobStatus.Running && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+        }
+
+        Assert.Equal(Engine.JobStatus.Completed, job.Job.Status);
+        var archive = (await _target.Drive.GetChildrenAsync(null, TestContext.Current.CancellationToken).ToListAsync(TestContext.Current.CancellationToken)).Single();
+        var copied = await _target.Drive.GetChildrenAsync(archive, TestContext.Current.CancellationToken).ToListAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(["Photos", "old.txt"], copied.Select(c => c.Name).Order(StringComparer.Ordinal));
+
+        // Source untouched.
+        Assert.Equal(3, _source.Drive.Count);
     }
 
     [AvaloniaFact]

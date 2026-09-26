@@ -19,6 +19,9 @@ public sealed class AppPaths
 
     public string AccountsFile => Path.Combine(DataDirectory, "accounts.json");
 
+    /// <summary>SQLite database holding transfer jobs and their progress.</summary>
+    public string TransferDatabase => Path.Combine(DataDirectory, "transfers.db");
+
     /// <summary>Holds DPAPI-encrypted secrets on Windows, and unprotected fallback secrets where no keyring exists.</summary>
     public string SecretsDirectory => Path.Combine(DataDirectory, "secrets");
 
@@ -31,7 +34,7 @@ public sealed class AppPaths
     }
 
     /// <summary>Creates <paramref name="path"/> if needed, readable only by the current user on Unix.</summary>
-    internal static void EnsurePrivateDirectory(string path)
+    public static void EnsurePrivateDirectory(string path)
     {
         if (OperatingSystem.IsWindows())
         {

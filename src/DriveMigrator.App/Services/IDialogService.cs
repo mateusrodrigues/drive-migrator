@@ -7,4 +7,7 @@ public interface IDialogService
     Task<bool> ConfirmAsync(string title, string message, string confirmText);
 
     Task ShowMessageAsync(string title, string message);
+
+    /// <summary>Shows the per-transfer options; true when the user chose to start.</summary>
+    Task<bool> ShowTransferOptionsAsync(ViewModels.TransferOptionsViewModel options);
 }

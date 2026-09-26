@@ -20,16 +20,66 @@
     <TextBlock DockPanel.Dock="Top" Margin="0,0,0,12" TextWrapping="Wrap" Text="{Binding Status}"
                IsVisible="{Binding ShowInfo}" />
 
+    <!-- Transfers -->
+    <Border DockPanel.Dock="Bottom" Margin="0,12,0,0" Padding="8" CornerRadius="6" BorderThickness="1"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+            IsVisible="{Binding Transfers.HasJobs}">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" FontWeight="SemiBold" Margin="4,0,0,6" Text="Transfers" />
+        <ScrollViewer MaxHeight="220">
+          <ItemsControl ItemsSource="{Binding Transfers.Jobs}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:TransferJobViewModel">
+                <Border Padding="6" Margin="0,0,0,4">
+                  <StackPanel Spacing="4">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <StackPanel Spacing="2">
+                        <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" />
+                        <TextBlock FontSize="12" Opacity="0.75">
+                          <Run Text="{Binding StatusText}" />
+                          <Run Text=" · " />
+                          <Run Text="{Binding Details}" />
+                        </TextBlock>
+                      </StackPanel>
+                      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <Button Content="Pause" Command="{Binding PauseCommand}" IsVisible="{Binding IsRunning}" />
+                        <Button Content="Resume" Command="{Binding ResumeCommand}" IsVisible="{Binding IsPaused}" />
+                        <Button Content="Retry failed" Command="{Binding RetryFailedCommand}" IsVisible="{Binding HasFailures}" />
+                        <ToggleButton Content="Errors" IsChecked="{Binding ShowFailures}" IsVisible="{Binding HasFailures}" />
+                        <Button Content="Remove" Command="{Binding RemoveCommand}" />
+                      </StackPanel>
+                    </Grid>
+                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" />
+                    <TextBlock FontSize="12" Opacity="0.65" TextTrimming="CharacterEllipsis"
+                               Text="{Binding CurrentItem, StringFormat='Working on {0}'}" IsVisible="{Binding IsRunning}" />
+                    <TextBlock FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource StatusErrorBrush}"
+                               Text="{Binding Problem}" IsVisible="{Binding Problem, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                    <ItemsControl ItemsSource="{Binding Failures}" IsVisible="{Binding ShowFailures}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                          <SelectableTextBlock FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource StatusErrorBrush}" Text="{Binding}" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </DockPanel>
+    </Border>
+
     <Grid ColumnDefinitions="*,Auto,*">
       <views:PaneView Grid.Column="0" DataContext="{Binding Left}" />
 
       <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0" Spacing="12">
         <Button HorizontalAlignment="Center" Command="{Binding CopyLeftToRightCommand}"
-                ToolTip.Tip="Copy checked items from the left pane into the right pane">
+                ToolTip.Tip="Copy checked items from the left pane into the right pane (you'll see the options first)">
           <PathIcon Data="M4 11h12.17l-5.58-5.59L12 4l8 8-8 8-1.41-1.41L16.17 13H4z" />
         </Button>
         <Button HorizontalAlignment="Center" Command="{Binding CopyRightToLeftCommand}"
-                ToolTip.Tip="Copy checked items from the right pane into the left pane">
+                ToolTip.Tip="Copy checked items from the right pane into the left pane (you'll see the options first)">
           <PathIcon Data="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z" />
         </Button>
       </StackPanel>

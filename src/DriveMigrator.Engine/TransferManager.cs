@@ -143,12 +143,20 @@ public sealed class TransferManager(TransferStore store, AccountManager accounts
         return store.LoadItems(job.Id, ItemStatus.Failed);
     }
 
+    /// <summary>Stops running jobs (they resume as paused next time) and waits briefly for workers to finish.</summary>
     public void Dispose()
     {
+        var running = new List<Task>();
         foreach (var job in Jobs)
         {
             job.Cancellation?.Cancel();
+            if (job.RunTask is { } task)
+            {
+                running.Add(task);
+            }
         }
+
+        Task.WaitAll([.. running], TimeSpan.FromSeconds(5));
     }
 
     private void Run(TransferJob job, IAccountSession source, IAccountSession destination)
@@ -159,7 +167,7 @@ public sealed class TransferManager(TransferStore store, AccountManager accounts
         job.SetCounts(store.GetCounts(job.Id));
         job.SetStatus(JobStatus.Running);
 
-        _ = Task.Run(async () =>
+        job.RunTask = Task.Run(async () =>
         {
             JobStatus final;
             string? problem = null;

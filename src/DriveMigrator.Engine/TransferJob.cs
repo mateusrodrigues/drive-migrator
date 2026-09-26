@@ -51,6 +51,8 @@ public sealed class TransferJob : ITransferObserver
 
     internal CancellationTokenSource? Cancellation { get; set; }
 
+    internal Task? RunTask { get; set; }
+
     void ITransferObserver.ItemStarted(ItemRecord item)
     {
         CurrentItem = item.Name;

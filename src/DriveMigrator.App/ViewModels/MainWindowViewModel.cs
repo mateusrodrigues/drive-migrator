@@ -5,6 +5,7 @@ using DriveMigrator.App.Services;
 using DriveMigrator.Core;
 using DriveMigrator.Core.Accounts;
 using DriveMigrator.Core.Transfers;
+using DriveMigrator.Engine;
 
 namespace DriveMigrator.App.ViewModels;
 
@@ -13,14 +14,19 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly AccountManager _accounts;
     private readonly IProviderRegistry _providers;
     private readonly IDialogService _dialogs;
+    private readonly TransferManager _transferManager;
 
-    public MainWindowViewModel(AccountManager accounts, IProviderRegistry providers, IDialogService dialogs)
+    public MainWindowViewModel(AccountManager accounts, IProviderRegistry providers, IDialogService dialogs, TransferManager transfers)
     {
         _accounts = accounts;
         _providers = providers;
         _dialogs = dialogs;
+        _transferManager = transfers;
+        Transfers = new TransfersViewModel(transfers, dialogs);
         _accounts.AccountsChanged += OnAccountsChanged;
     }
+
+    public TransfersViewModel Transfers { get; }
 
     public PaneViewModel Left { get; } = new("left");
 
@@ -55,6 +61,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         // AccountsChanged is raised off the UI thread and its refresh may not have run yet.
         RefreshAccounts();
 
+        // Jobs interrupted last time come back paused, ready to resume.
+        _transferManager.Load();
+        Transfers.Sync();
+
         // Start with two different accounts side by side when there are at least two.
         if (Left.SelectedAccount is null && Right.SelectedAccount is null)
         {
@@ -66,6 +76,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     public void Dispose()
     {
         _accounts.AccountsChanged -= OnAccountsChanged;
+        Transfers.Dispose();
         Left.Dispose();
         Right.Dispose();
     }
@@ -164,12 +175,20 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     private Task OpenSettingsAsync() => _dialogs.ShowSettingsAsync();
 
     [RelayCommand]
-    private Task CopyLeftToRightAsync() => PreviewCopyAsync(Left, Right);
+    private Task CopyLeftToRightAsync() => CopyAsync(Left, Right);
 
     [RelayCommand]
-    private Task CopyRightToLeftAsync() => PreviewCopyAsync(Right, Left);
+    private Task CopyRightToLeftAsync() => CopyAsync(Right, Left);
 
-    private async Task PreviewCopyAsync(PaneViewModel source, PaneViewModel destination)
+    /// <summary>"Google Drive (ada@gmail.com) → OneDrive / Documents (ada@outlook.com)".</summary>
+    internal static string TitleFor(PaneViewModel source, PaneViewModel destination, TransferRequest request)
+    {
+        var from = string.Join(", ", request.Items.Select(i => i.Kind).Distinct().Select(k => request.Source.GetCapability(k)!.DisplayName));
+        var to = string.Join(", ", request.Targets.Select(t => destination.ResolveDestination(t.Kind)?.Path ?? request.Destination.GetCapability(t.Kind)!.DisplayName));
+        return $"{from} ({source.SelectedAccount!.Email ?? source.SelectedAccount.Label}) → {to} ({destination.SelectedAccount!.Email ?? destination.SelectedAccount.Label})";
+    }
+
+    private async Task CopyAsync(PaneViewModel source, PaneViewModel destination)
     {
         var request = BuildRequest(source, destination, out var error);
         if (request is null)
@@ -178,10 +197,14 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        // The transfer engine arrives in the next phase; for now show exactly what would be copied.
-        await _dialogs.ShowMessageAsync(
-            "Transfer preview",
-            Describe(source, destination, request) + "\n\nNothing has been copied. Transfers are enabled in the next version.");
+        var options = new TransferOptionsViewModel(Describe(source, destination, request), request);
+        if (!await _dialogs.ShowTransferOptionsAsync(options))
+        {
+            return;
+        }
+
+        _transferManager.Start(request with { Options = options.ToOptions() }, TitleFor(source, destination, request));
+        Transfers.Sync();
     }
 
     private void OnAccountsChanged(object? sender, EventArgs e) => OnUiThread(RefreshAccounts);

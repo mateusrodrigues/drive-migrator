@@ -90,7 +90,8 @@ public sealed class WindowRenderingTests : IDisposable
         target.Drive.AddContainer(null, "Pictures");
         _accountStore.Accounts = [source.Account, target.Account];
 
-        using var vm = new MainWindowViewModel(_accounts, new ProviderRegistry([_google, _microsoft]), new FakeDialogService());
+        using var transfers = new TempTransfers(_accounts);
+        using var vm = new MainWindowViewModel(_accounts, new ProviderRegistry([_google, _microsoft]), new FakeDialogService(), transfers.Manager);
         var window = new MainWindow { DataContext = vm };
         window.Show();
         await vm.InitializeAsync();
@@ -110,6 +111,51 @@ public sealed class WindowRenderingTests : IDisposable
         vm.Right.SelectedNode = right.Children[0];
 
         Capture(window, "main");
+
+        // A finished job with one failure, and a paused one, in the transfers panel.
+        target.Drive.OnUpload = (name, _) => name.StartsWith("2025", StringComparison.Ordinal) ? throw new IOException("The service is unavailable.") : Task.CompletedTask;
+        var request = MainWindowViewModel.BuildRequest(vm.Left, vm.Right, out _)!;
+        var done = transfers.Manager.Start(request, MainWindowViewModel.TitleFor(vm.Left, vm.Right, request));
+        while (done.Status == Engine.JobStatus.Running)
+        {
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+        }
+
+        vm.Transfers.Sync();
+        vm.Transfers.Jobs[0].Refresh();
+        vm.Transfers.Jobs[0].ShowFailures = true;
+        Capture(window, "main-transfers");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void TransferOptionsWindow_Renders()
+    {
+        var source = _google.AddAccount("ada@gmail.com");
+        source.Drive.DisplayName = "Google Drive";
+        source.Drive.NativeDocumentTypes =
+        [
+            new("g/doc", "Google Docs", [new("a", ".docx", "Word document"), new("b", ".pdf", "PDF")]),
+            new("g/sheet", "Google Sheets", [new("c", ".xlsx", "Excel workbook"), new("b", ".pdf", "PDF")]),
+        ];
+        var target = _microsoft.AddAccount("ada@outlook.com");
+        target.Drive.CanConvertToNativeFormat = true;
+        target.Drive.DisplayName = "OneDrive";
+        var request = new Core.Transfers.TransferRequest(source, target, [new(Core.CapabilityKind.Drive, null)], [new(Core.CapabilityKind.Drive, null)]);
+
+        var vm = new TransferOptionsViewModel("From ada@gmail.com · Google to ada@outlook.com · Microsoft\n\n• Google Drive: 2 folders, 3 files → OneDrive / Documents", request);
+        vm.NativeDocuments[1].Selected = vm.NativeDocuments[1].Choices[^1];
+        vm.ConflictKeepBoth = true;
+        var options = vm.ToOptions();
+
+        Assert.Equal(Core.Transfers.ConflictPolicy.KeepBoth, options.Conflicts);
+        Assert.Equal(".docx", options.NativeExports["g/doc"]!.FileExtension);
+        Assert.Null(options.NativeExports["g/sheet"]);
+        Assert.False(vm.ConflictSkip);
+
+        var window = new TransferOptionsWindow { DataContext = vm };
+        window.Show();
+        Capture(window, "transfer-options");
         window.Close();
     }
 

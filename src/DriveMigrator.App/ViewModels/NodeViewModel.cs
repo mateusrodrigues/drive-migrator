@@ -263,7 +263,7 @@ public sealed partial class NodeViewModel : ViewModelBase
 
     private static NodeViewModel Placeholder(string message) => new(message);
 
-    private static string FormatSize(long bytes)
+    internal static string FormatSize(long bytes)
     {
         string[] units = ["B", "KB", "MB", "GB", "TB"];
         double value = bytes;

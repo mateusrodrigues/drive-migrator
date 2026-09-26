@@ -9,6 +9,7 @@ Contacts; personal and work/school accounts). Built with .NET 10 and Avalonia.
 | Path | Purpose |
 |---|---|
 | `src/DriveMigrator.Core` | Provider-neutral abstractions: providers, accounts, capabilities, node tree, payload models. No cloud SDK dependencies. |
+| `src/DriveMigrator.Engine` | Transfer engine: SQLite-backed, resumable jobs with parallel workers and conflict handling. |
 | `src/DriveMigrator.Infrastructure` | Local persistence: OS keychain secret store (DPAPI / macOS Keychain / libsecret), account list. |
 | `src/DriveMigrator.Providers.Google` | Google provider (sign-in via Google.Apis.Auth; APIs added per capability). |
 | `src/DriveMigrator.Providers.Microsoft` | Microsoft provider (sign-in via MSAL, personal and work/school accounts). |
@@ -25,6 +26,8 @@ Contacts; personal and work/school accounts). Built with .NET 10 and Avalonia.
 - Data moves through neutral formats — file streams, raw MIME for mail, and `CalendarEvent` / `Contact`
   records — so the engine pairs any reader with any writer without provider-to-provider code.
 - New services plug in with `services.AddCloudProvider<TProvider>()`.
+- The transfer engine stores every job and item in `transfers.db`, creates folders before their contents and
+  discovers contents as it goes, so jobs can be paused, survive restarts, and resume without re-copying.
 - `AccountManager` restores, adds, re-authorizes and removes accounts. Tokens live in the OS credential store;
   only the account list (no secrets) is written to `accounts.json` in the app data directory.
 

@@ -21,7 +21,13 @@
   <Border BorderThickness="1" CornerRadius="6" Padding="8"
           BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
     <DockPanel>
-      <ComboBox DockPanel.Dock="Top" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+      <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+      <Button DockPanel.Dock="Right" Margin="6,0,0,0" VerticalAlignment="Stretch"
+              Command="{Binding RefreshCommand}" IsEnabled="{Binding HasAccount}"
+              ToolTip.Tip="Reload this account's tree">
+        <PathIcon Width="14" Height="14" Data="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z" />
+      </Button>
+      <ComboBox HorizontalAlignment="Stretch"
                 ItemsSource="{Binding Accounts}" SelectedItem="{Binding SelectedAccount}"
                 PlaceholderText="Choose an account" IsEnabled="{Binding HasAnyAccounts}">
         <ComboBox.ItemTemplate>
@@ -33,6 +39,7 @@
           </DataTemplate>
         </ComboBox.ItemTemplate>
       </ComboBox>
+      </DockPanel>
 
       <StackPanel DockPanel.Dock="Bottom" Margin="4,8,4,0" Spacing="2" IsVisible="{Binding HasAccount}">
         <TextBlock Classes="muted" FontSize="12" Text="{Binding SelectionSummary}" TextTrimming="CharacterEllipsis" />
