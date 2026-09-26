@@ -68,6 +68,14 @@ public class GoogleDriveBrowsingTests
         Assert.Equal("'abc123' in parents and trashed = false", HttpUtility.ParseQueryString(Assert.Single(handler.Requests).RequestUri!.Query)["q"]);
     }
 
+    [Fact]
+    public async Task EmptyFolder_WithEmptyResponseBody()
+    {
+        var handler = new FakeHttpHandler(_ => new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent(string.Empty) });
+
+        Assert.Empty(await CreateCapability(handler).GetChildrenAsync(null, Ct).ToListAsync(Ct));
+    }
+
     private static GoogleDriveCapability CreateCapability(FakeHttpHandler handler)
         => new(new DriveService(new BaseClientService.Initializer
         {

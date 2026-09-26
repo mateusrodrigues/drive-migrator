@@ -107,8 +107,9 @@ internal sealed class GoogleDriveCapability : IDriveCapability
 
         do
         {
+            // An empty result can come back as an empty body, which the client returns as null.
             var page = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            foreach (var file in page.Files ?? [])
+            foreach (var file in page?.Files ?? [])
             {
                 if (ToNode(file) is { } node)
                 {
@@ -116,12 +117,12 @@ internal sealed class GoogleDriveCapability : IDriveCapability
                 }
             }
 
-            if (page.NextPageToken is not null && page.NextPageToken == request.PageToken)
+            if (page?.NextPageToken is not null && page.NextPageToken == request.PageToken)
             {
                 throw new InvalidOperationException("Google Drive returned the same page token twice.");
             }
 
-            request.PageToken = page.NextPageToken;
+            request.PageToken = page?.NextPageToken;
         }
         while (request.PageToken is not null);
     }
@@ -131,7 +132,8 @@ internal sealed class GoogleDriveCapability : IDriveCapability
         var request = _drive.Files.Create(new GoogleFile { Name = name, MimeType = FolderMimeType, Parents = [parent?.Id ?? "root"] });
         request.Fields = FileFields;
         request.SupportsAllDrives = true;
-        var created = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        var created = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false)
+            ?? throw new IOException($"Google Drive returned nothing when creating the folder '{name}'.");
         return ToNode(created)!;
     }
 
@@ -268,7 +270,7 @@ internal sealed class GoogleDriveCapability : IDriveCapability
         var request = _drive.Files.Get(file.Id);
         request.Fields = "exportLinks";
         request.SupportsAllDrives = true;
-        var links = (await request.ExecuteAsync(cancellationToken).ConfigureAwait(false)).ExportLinks;
+        var links = (await request.ExecuteAsync(cancellationToken).ConfigureAwait(false))?.ExportLinks;
         if (links is null || !links.TryGetValue(format.MimeType, out var link))
         {
             throw new IOException($"'{file.Name}' is too large to export as {format.DisplayName}.");

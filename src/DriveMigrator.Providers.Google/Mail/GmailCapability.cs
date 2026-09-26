@@ -88,7 +88,8 @@ internal sealed class GmailCapability : IMailCapability
         var fullName = parentLabel is null ? name : $"{parentLabel.Name}/{name}";
         var created = await _gmail.Users.Labels.Create(
             new Label { Name = fullName, LabelListVisibility = "labelShow", MessageListVisibility = "show", Type = "user" },
-            Me).ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            Me).ExecuteAsync(cancellationToken).ConfigureAwait(false)
+            ?? throw new IOException($"Gmail returned nothing when creating the label '{fullName}'.");
 
         lock (_gate)
         {
@@ -106,7 +107,7 @@ internal sealed class GmailCapability : IMailCapability
         request.Fields = "id,raw,labelIds,internalDate";
         var raw = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
-        var bytes = DecodeBase64Url(raw.Raw ?? throw new IOException($"Gmail returned no content for message {message.Id}."));
+        var bytes = DecodeBase64Url(raw?.Raw ?? throw new IOException($"Gmail returned no content for message {message.Id}."));
         var stream = new MemoryStream(bytes, writable: false);
         var headers = await HeaderList.LoadAsync(stream, cancellationToken).ConfigureAwait(false);
         stream.Position = 0;
@@ -224,8 +225,9 @@ internal sealed class GmailCapability : IMailCapability
         var count = 0;
         do
         {
+            // With a field filter, Gmail answers an empty result with an empty body, which the client returns as null.
             var page = await list.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            var ids = (page.Messages ?? []).Select(m => m.Id).Take(maxMessages - count).ToList();
+            var ids = (page?.Messages ?? []).Select(m => m.Id).Take(maxMessages - count).ToList();
             count += ids.Count;
 
             if (withDetails)
@@ -243,7 +245,7 @@ internal sealed class GmailCapability : IMailCapability
                 }
             }
 
-            list.PageToken = count < maxMessages ? page.NextPageToken : null;
+            list.PageToken = count < maxMessages ? page?.NextPageToken : null;
         }
         while (list.PageToken is not null);
     }
@@ -262,15 +264,15 @@ internal sealed class GmailCapability : IMailCapability
                 request.MetadataHeaders = DetailHeaders;
                 request.Fields = "id,internalDate,sizeEstimate,payload/headers";
                 var message = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-                var headers = message.Payload?.Headers ?? [];
+                var headers = message?.Payload?.Headers ?? [];
                 var subject = headers.FirstOrDefault(h => string.Equals(h.Name, "Subject", StringComparison.OrdinalIgnoreCase))?.Value;
                 var from = headers.FirstOrDefault(h => string.Equals(h.Name, "From", StringComparison.OrdinalIgnoreCase))?.Value;
                 return MessageNode(id) with
                 {
                     Name = string.IsNullOrWhiteSpace(subject) ? "(no subject)" : subject,
                     Detail = from is null ? null : InternetAddressList.TryParse(from, out var parsed) && parsed.Mailboxes.FirstOrDefault() is { } box ? box.Name ?? box.Address : from,
-                    Size = message.SizeEstimate,
-                    ModifiedAt = message.InternalDate is { } ms ? DateTimeOffset.FromUnixTimeMilliseconds(ms) : null,
+                    Size = message?.SizeEstimate,
+                    ModifiedAt = message?.InternalDate is { } ms ? DateTimeOffset.FromUnixTimeMilliseconds(ms) : null,
                 };
             }
             finally
@@ -292,8 +294,9 @@ internal sealed class GmailCapability : IMailCapability
         list.IncludeSpamTrash = labelId is null or "SPAM" or "TRASH";
         list.MaxResults = 1;
         list.Fields = "messages(id)";
+        // No match comes back as an empty body, i.e. null.
         var page = await list.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-        return page.Messages?.FirstOrDefault()?.Id;
+        return page?.Messages?.FirstOrDefault()?.Id;
     }
 
     private Task<List<Label>> GetLabelsAsync(bool refresh, CancellationToken cancellationToken)
@@ -310,7 +313,7 @@ internal sealed class GmailCapability : IMailCapability
     }
 
     private async Task<List<Label>> LoadLabelsAsync(CancellationToken cancellationToken)
-        => [.. (await _gmail.Users.Labels.List(Me).ExecuteAsync(cancellationToken).ConfigureAwait(false)).Labels ?? []];
+        => [.. (await _gmail.Users.Labels.List(Me).ExecuteAsync(cancellationToken).ConfigureAwait(false))?.Labels ?? []];
 
     private static string? ParentPath(string name) => name.LastIndexOf('/') is var i and > 0 ? name[..i] : null;
 

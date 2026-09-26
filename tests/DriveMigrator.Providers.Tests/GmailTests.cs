@@ -173,6 +173,29 @@ public class GmailTests
         Assert.Equal(["Work/Clients", "Receipts"], posts);
     }
 
+    // Regression: with a field filter, Gmail answers "no results" with an empty body, which the client returns as
+    // null; that crashed the duplicate check when copying a single message into Gmail.
+    [Fact]
+    public async Task EmptyResponses_MeanNoResults()
+    {
+        var handler = new FakeHttpHandler(r => r switch
+        {
+            { Method.Method: "GET" } when r.Url.StartsWith(Api + "labels", StringComparison.Ordinal) => Empty(),
+            { Method.Method: "GET" } => Empty(),
+            { Method.Method: "POST" } => Resumable("https://upload.example/imp2"),
+            _ => FakeHttpHandler.Json("""{ "id": "new2" }"""),
+        });
+        var gmail = Create(handler);
+        var inbox = new MigrationNode("INBOX", "Inbox", NodeKind.MailFolder);
+
+        Assert.False(await gmail.ContainsMessageAsync(inbox, "<brief@x>", Ct));
+        Assert.Empty(await gmail.GetChildrenAsync(inbox, Ct).ToListAsync(Ct));
+        Assert.Equal(5, (await gmail.GetChildrenAsync(null, Ct).ToListAsync(Ct)).Count);
+
+        var content = new MailMessageContent(new MemoryStream("Subject: x\r\n\r\ny"u8.ToArray())) { InternetMessageId = "<brief@x>" };
+        Assert.Equal("new2", (await gmail.ImportMessageAsync(inbox, content, Ct)).Id);
+    }
+
     [Theory]
     [InlineData("Receipts", "Receipts")]
     [InlineData("Inbox", "Inbox (imported)")]
@@ -184,6 +207,8 @@ public class GmailTests
     [Fact]
     public void DecodeBase64Url_HandlesMissingPadding()
         => Assert.Equal("any carnal pleas"u8.ToArray(), GmailCapability.DecodeBase64Url("YW55IGNhcm5hbCBwbGVhcw"));
+
+    private static HttpResponseMessage Empty() => new(HttpStatusCode.OK) { Content = new StringContent(string.Empty, Encoding.UTF8, "application/json") };
 
     private static HttpResponseMessage Resumable(string location)
     {
