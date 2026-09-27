@@ -107,7 +107,8 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable
         var confirmed = await _dialogs.ConfirmAsync(
             "Remove account",
             $"Remove {item.Email ?? item.DisplayName} ({item.ProviderName})? Its saved sign-in will be deleted from this computer. No data in the account is changed.",
-            "Remove");
+            "Remove",
+            destructive: true);
         if (!confirmed)
         {
             return;

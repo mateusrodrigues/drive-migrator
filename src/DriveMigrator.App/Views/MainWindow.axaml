@@ -2,74 +2,56 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:DriveMigrator.App.ViewModels"
         xmlns:views="using:DriveMigrator.App.Views"
+        xmlns:ctl="using:DriveMigrator.App.Controls"
         x:Class="DriveMigrator.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Drive Migrator"
         Width="1100" Height="700"
         MinWidth="800" MinHeight="500">
-  <DockPanel Margin="16">
-    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
-      <TextBlock FontSize="20" FontWeight="SemiBold" Text="Drive Migrator" VerticalAlignment="Center" />
-      <Button Grid.Column="1" Content="Settings" Command="{Binding OpenSettingsCommand}" />
-    </Grid>
-
-    <Border DockPanel.Dock="Top" Margin="0,0,0,12" Padding="12,8" CornerRadius="4"
-            Background="{DynamicResource BannerWarningBrush}" IsVisible="{Binding NeedsAttention}">
-      <TextBlock TextWrapping="Wrap" Text="{Binding Status}" />
+  <DockPanel>
+    <!-- Top bar -->
+    <Border DockPanel.Dock="Top" Height="44" Padding="16,0"
+            Background="{DynamicResource surface-200}"
+            BorderBrush="{DynamicResource border-100}" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Classes="title" VerticalAlignment="Center" Text="Drive Migrator" />
+        <Button Grid.Column="1" Classes="secondary" Content="Settings" Command="{Binding OpenSettingsCommand}" />
+      </Grid>
     </Border>
-    <TextBlock DockPanel.Dock="Top" Margin="0,0,0,12" TextWrapping="Wrap" Text="{Binding Status}"
-               IsVisible="{Binding ShowInfo}" />
 
-    <!-- Transfers -->
-    <Border DockPanel.Dock="Bottom" Margin="0,12,0,0" Padding="8" CornerRadius="6" BorderThickness="1"
-            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+    <!-- Status: warning when an account needs attention, otherwise neutral information. -->
+    <Panel DockPanel.Dock="Top" Margin="16,8,16,0" IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <Border Classes="banner warning" IsVisible="{Binding NeedsAttention}">
+        <DockPanel>
+          <ctl:Icon Classes="tone warning" Kind="Warning" />
+          <TextBlock TextWrapping="Wrap" Text="{Binding Status}" />
+        </DockPanel>
+      </Border>
+      <Border Classes="banner info" IsVisible="{Binding ShowInfo}">
+        <DockPanel>
+          <ctl:Icon Classes="tone info" Kind="Info" />
+          <TextBlock TextWrapping="Wrap" Text="{Binding Status}" />
+        </DockPanel>
+      </Border>
+    </Panel>
+
+    <!-- Transfers: only once a job exists. -->
+    <Border DockPanel.Dock="Bottom" MaxHeight="220"
+            Background="{DynamicResource surface-100}"
+            BorderBrush="{DynamicResource border-100}" BorderThickness="0,1,0,0"
             IsVisible="{Binding Transfers.HasJobs}">
       <DockPanel>
-        <TextBlock DockPanel.Dock="Top" FontWeight="SemiBold" Margin="4,0,0,6" Text="Transfers" />
-        <ScrollViewer MaxHeight="220">
+        <TextBlock DockPanel.Dock="Top" Classes="label muted" Margin="16,8" Text="Transfers" />
+        <ScrollViewer Padding="16,0,16,12">
           <ItemsControl ItemsSource="{Binding Transfers.Jobs}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Spacing="8" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:TransferJobViewModel">
-                <Border Padding="6" Margin="0,0,0,4">
-                  <StackPanel Spacing="4">
-                    <Grid ColumnDefinitions="*,Auto">
-                      <StackPanel Spacing="2">
-                        <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" />
-                        <TextBlock FontSize="12" Opacity="0.75">
-                          <Run Text="{Binding StatusText}" />
-                          <Run Text=" · " />
-                          <Run Text="{Binding Details}" />
-                        </TextBlock>
-                      </StackPanel>
-                      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <Button Content="Pause" Command="{Binding PauseCommand}" IsVisible="{Binding IsRunning}" />
-                        <Button Content="Resume" Command="{Binding ResumeCommand}" IsVisible="{Binding IsPaused}" />
-                        <Button Content="Retry failed" Command="{Binding RetryFailedCommand}" IsVisible="{Binding HasFailures}" />
-                        <ToggleButton Content="Errors" IsChecked="{Binding ShowFailures}" IsVisible="{Binding HasFailures}" />
-                        <Button Content="Remove" Command="{Binding RemoveCommand}" />
-                      </StackPanel>
-                    </Grid>
-                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" />
-                    <TextBlock FontSize="12" Opacity="0.65" TextTrimming="CharacterEllipsis"
-                               Text="{Binding WorkingOn}" IsVisible="{Binding WorkingOn, Converter={x:Static ObjectConverters.IsNotNull}}" />
-                    <TextBlock FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource StatusErrorBrush}"
-                               Text="{Binding Problem}" IsVisible="{Binding Problem, Converter={x:Static ObjectConverters.IsNotNull}}" />
-                    <StackPanel IsVisible="{Binding ShowFailures}" Spacing="4">
-                      <ItemsControl ItemsSource="{Binding Failures}">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate x:DataType="x:String">
-                            <SelectableTextBlock FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource StatusErrorBrush}" Text="{Binding}" />
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                      <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button FontSize="12" Content="Copy error details" Command="{Binding CopyErrorDetailsCommand}"
-                                ToolTip.Tip="Copies the full technical details of these errors, to include in a bug report" />
-                        <TextBlock FontSize="12" Opacity="0.7" VerticalAlignment="Center" Text="Copied." IsVisible="{Binding CopiedDetails}" />
-                      </StackPanel>
-                    </StackPanel>
-                  </StackPanel>
-                </Border>
+                <views:TransferJobRow />
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
@@ -77,17 +59,19 @@
       </DockPanel>
     </Border>
 
-    <Grid ColumnDefinitions="*,Auto,*">
+    <!-- The two panes around a fixed arrow column. -->
+    <Grid ColumnDefinitions="*,36,*" ColumnSpacing="8" Margin="8">
       <views:PaneView Grid.Column="0" DataContext="{Binding Left}" />
 
-      <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0" Spacing="12">
-        <Button HorizontalAlignment="Center" Command="{Binding CopyLeftToRightCommand}"
+      <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8"
+                  IsEnabled="{Binding Left.HasAnyAccounts}">
+        <Button Classes="icon" Command="{Binding CopyLeftToRightCommand}"
                 ToolTip.Tip="Copy checked items from the left pane into the right pane (you'll see the options first)">
-          <PathIcon Data="M4 11h12.17l-5.58-5.59L12 4l8 8-8 8-1.41-1.41L16.17 13H4z" />
+          <ctl:Icon Kind="ArrowRight" />
         </Button>
-        <Button HorizontalAlignment="Center" Command="{Binding CopyRightToLeftCommand}"
+        <Button Classes="icon" Command="{Binding CopyRightToLeftCommand}"
                 ToolTip.Tip="Copy checked items from the right pane into the left pane (you'll see the options first)">
-          <PathIcon Data="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z" />
+          <ctl:Icon Kind="ArrowLeft" />
         </Button>
       </StackPanel>
 

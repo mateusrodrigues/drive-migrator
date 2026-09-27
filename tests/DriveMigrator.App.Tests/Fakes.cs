@@ -43,7 +43,7 @@ internal sealed class FakeDialogService : IDialogService
         return Task.FromResult(StartTransfers);
     }
 
-    public Task<bool> ConfirmAsync(string title, string message, string confirmText)
+    public Task<bool> ConfirmAsync(string title, string message, string confirmText, bool destructive = false)
     {
         Confirmations.Add(message);
         return Task.FromResult(ConfirmResult);

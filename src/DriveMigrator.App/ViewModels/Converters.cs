@@ -1,10 +1,10 @@
 using Avalonia.Data.Converters;
-using Avalonia.Media;
 
 namespace DriveMigrator.App.ViewModels;
 
 public static class Converters
 {
-    public static readonly IValueConverter ItalicIfTrue =
-        new FuncValueConverter<bool, FontStyle>(value => value ? FontStyle.Italic : FontStyle.Normal);
+    /// <summary>Whether an index equals the converter parameter, e.g. to show the content of the selected tab.</summary>
+    public static readonly IValueConverter IndexEquals =
+        new FuncValueConverter<int, string, bool>((index, parameter) => index.ToString(System.Globalization.CultureInfo.InvariantCulture) == parameter);
 }

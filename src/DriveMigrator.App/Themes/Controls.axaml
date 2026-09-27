@@ -1,0 +1,299 @@
+<!--
+  Drive Migrator component styles, built only on the tokens in Tokens.axaml. Surfaces are set apart with 1px
+  borders, not shadows; nothing moves except an indeterminate progress bar; every status carries a word and an
+  icon as well as its colour.
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="using:DriveMigrator.App.Controls">
+
+  <!-- Windows: surface-100 for the main window; dialogs and Settings are raised surface-200. -->
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource surface-100}" />
+    <Setter Property="Foreground" Value="{DynamicResource ink-100}" />
+  </Style>
+  <Style Selector="Window.dialog">
+    <Setter Property="Background" Value="{DynamicResource surface-200}" />
+  </Style>
+
+  <!-- Type scale (tokens.json "Text" group). body is the default size. -->
+  <Style Selector=":is(TextBlock).micro">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="LineHeight" Value="15" />
+    <Setter Property="FontWeight" Value="Medium" />
+  </Style>
+  <Style Selector=":is(TextBlock).body-sm">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="LineHeight" Value="17" />
+  </Style>
+  <Style Selector=":is(TextBlock).body">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="LineHeight" Value="19" />
+  </Style>
+  <Style Selector=":is(TextBlock).body-strong">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="LineHeight" Value="19" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector=":is(TextBlock).label">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="LineHeight" Value="16" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector=":is(TextBlock).heading-sm">
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="LineHeight" Value="20" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector=":is(TextBlock).heading">
+    <Setter Property="FontSize" Value="18" />
+    <Setter Property="LineHeight" Value="24" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+  <Style Selector=":is(TextBlock).title">
+    <Setter Property="FontSize" Value="20" />
+    <Setter Property="LineHeight" Value="26" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+  <Style Selector=":is(TextBlock).muted">
+    <Setter Property="Foreground" Value="{DynamicResource ink-200}" />
+  </Style>
+  <Style Selector=":is(TextBlock).danger">
+    <Setter Property="Foreground" Value="{DynamicResource danger-100}" />
+  </Style>
+  <Style Selector=":is(TextBlock).warning">
+    <Setter Property="Foreground" Value="{DynamicResource warning-100}" />
+  </Style>
+
+  <!-- Status glyph colours. -->
+  <Style Selector="ctl|Icon.muted">
+    <Setter Property="Foreground" Value="{DynamicResource ink-200}" />
+  </Style>
+  <Style Selector="ctl|Icon.success">
+    <Setter Property="Foreground" Value="{DynamicResource success-100}" />
+  </Style>
+  <Style Selector="ctl|Icon.warning">
+    <Setter Property="Foreground" Value="{DynamicResource warning-100}" />
+  </Style>
+  <Style Selector="ctl|Icon.danger">
+    <Setter Property="Foreground" Value="{DynamicResource danger-100}" />
+  </Style>
+  <Style Selector="ctl|Icon.info">
+    <Setter Property="Foreground" Value="{DynamicResource info-100}" />
+  </Style>
+
+  <!--
+    Button. The default look is the secondary variant (resources in Tokens.axaml); primary is the one action per
+    view that finishes the job, ghost a low-emphasis inline toggle, danger an action that removes something.
+  -->
+  <Style Selector="Button, ToggleButton">
+    <Setter Property="MinHeight" Value="30" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button:pressed, ToggleButton:pressed">
+    <Setter Property="RenderTransform" Value="none" />
+  </Style>
+  <Style Selector="Button:disabled, ToggleButton:disabled">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+
+  <Style Selector="Button.primary">
+    <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource accent-100}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource accent-100}" />
+      <Setter Property="Foreground" Value="{DynamicResource accent-100-on}" />
+    </Style>
+    <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource accent-100-hover}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource accent-100-hover}" />
+    </Style>
+    <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource accent-100-pressed}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource accent-100-pressed}" />
+    </Style>
+  </Style>
+
+  <Style Selector="Button.danger">
+    <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource danger-100}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource danger-100}" />
+      <Setter Property="Foreground" Value="{DynamicResource danger-on}" />
+    </Style>
+    <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource danger-100-hover}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource danger-100-hover}" />
+    </Style>
+    <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource danger-100-pressed}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource danger-100-pressed}" />
+    </Style>
+  </Style>
+
+  <Style Selector="Button.ghost, ToggleButton.ghost">
+    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="Padding" Value="8,0" />
+    <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource ink-100}" />
+    </Style>
+    <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource row-hover}" />
+    </Style>
+  </Style>
+
+  <!-- IconButton: 28×28, icon only; ToolTip.Tip names the action. A ToggleButton.icon is a two-state toggle. -->
+  <Style Selector="Button.icon, ToggleButton.icon">
+    <Setter Property="Width" Value="28" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource ink-200}" />
+    </Style>
+    <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource row-hover}" />
+      <Setter Property="Foreground" Value="{DynamicResource ink-100}" />
+    </Style>
+    <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource accent-soft}" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="0.45" />
+    </Style>
+  </Style>
+  <Style Selector="ToggleButton.icon:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource accent-soft}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource accent-soft-border}" />
+    <Setter Property="Foreground" Value="{DynamicResource accent-100}" />
+  </Style>
+
+  <!-- Text fields and dropdowns. -->
+  <Style Selector="TextBox">
+    <Setter Property="CornerRadius" Value="{StaticResource radius-md}" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="TextBox.secret">
+    <Setter Property="Padding" Value="8,5,2,5" />
+  </Style>
+  <Style Selector="ComboBox">
+    <Setter Property="CornerRadius" Value="{StaticResource radius-md}" />
+  </Style>
+  <Style Selector="ComboBox:focus-visible /template/ Border#HighlightBackground">
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+  <Style Selector="ComboBox /template/ Border#PopupBorder">
+    <Setter Property="CornerRadius" Value="{StaticResource radius-md}" />
+    <Setter Property="BoxShadow" Value="{DynamicResource shadow-sm}" />
+  </Style>
+  <!-- AccountPicker: tall enough for the two-line name / email item. -->
+  <Style Selector="ComboBox.account">
+    <Setter Property="MinHeight" Value="40" />
+  </Style>
+
+  <!-- ProgressBar: thin 6px bar with pill ends. -->
+  <Style Selector="ProgressBar">
+    <Setter Property="MinHeight" Value="6" />
+    <Setter Property="Height" Value="6" />
+    <Setter Property="CornerRadius" Value="{StaticResource radius-pill}" />
+    <Setter Property="Background" Value="{DynamicResource surface-300}" />
+    <Setter Property="Foreground" Value="{DynamicResource accent-100}" />
+  </Style>
+
+  <!-- Card: the one shared shell for every bordered box. -->
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{DynamicResource surface-200}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource border-100}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource radius-lg}" />
+    <Setter Property="Padding" Value="16" />
+  </Style>
+
+  <!-- Banner: a tinted strip for a message about the whole screen, always with a tone icon. -->
+  <Style Selector="Border.banner">
+    <Setter Property="Padding" Value="16,12" />
+    <Setter Property="CornerRadius" Value="{StaticResource radius-md}" />
+  </Style>
+  <Style Selector="Border.banner.info">
+    <Setter Property="Background" Value="{DynamicResource info-soft}" />
+  </Style>
+  <Style Selector="Border.banner.warning">
+    <Setter Property="Background" Value="{DynamicResource warning-soft}" />
+  </Style>
+  <Style Selector="Border.banner.danger">
+    <Setter Property="Background" Value="{DynamicResource danger-soft}" />
+  </Style>
+  <Style Selector="Border.banner ctl|Icon.tone">
+    <Setter Property="Margin" Value="0,2,8,0" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+  </Style>
+
+  <!-- StatusPill: tinted background, icon and the state's name. -->
+  <Style Selector="Border.pill">
+    <Setter Property="Padding" Value="8,2" />
+    <Setter Property="CornerRadius" Value="{StaticResource radius-pill}" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+  </Style>
+  <Style Selector="Border.pill > StackPanel">
+    <Setter Property="Orientation" Value="Horizontal" />
+    <Setter Property="Spacing" Value="4" />
+  </Style>
+  <Style Selector="Border.pill ctl|Icon">
+    <Setter Property="Width" Value="12" />
+    <Setter Property="Height" Value="12" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.pill TextBlock">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="LineHeight" Value="16" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Border.pill.success">
+    <Setter Property="Background" Value="{DynamicResource success-soft}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource success-100}" />
+  </Style>
+  <Style Selector="Border.pill.danger">
+    <Setter Property="Background" Value="{DynamicResource danger-soft}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource danger-100}" />
+  </Style>
+  <Style Selector="Border.pill.info">
+    <Setter Property="Background" Value="{DynamicResource info-soft}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource info-100}" />
+  </Style>
+  <Style Selector="Border.pill.neutral">
+    <Setter Property="Background" Value="{DynamicResource surface-300}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource ink-200}" />
+  </Style>
+
+  <!-- OptionsSection: heading, controls, then a muted note; a hairline rule above every section but the first. -->
+  <Style Selector="StackPanel.section">
+    <Setter Property="Spacing" Value="8" />
+  </Style>
+  <Style Selector="Border.section">
+    <Setter Property="BorderBrush" Value="{DynamicResource border-100}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+    <Setter Property="Padding" Value="0,20,0,0" />
+  </Style>
+  <Style Selector="Border.section.first">
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+
+  <!-- Dialog shell: header, scrolling body, footer with a hairline above it. -->
+  <Style Selector="Border.dialog-footer">
+    <Setter Property="BorderBrush" Value="{DynamicResource border-100}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+    <Setter Property="Padding" Value="20,16" />
+  </Style>
+  <Style Selector="Border.dialog-footer > StackPanel">
+    <Setter Property="Orientation" Value="Horizontal" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="Spacing" Value="8" />
+  </Style>
+</Styles>

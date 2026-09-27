@@ -1,158 +1,189 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:DriveMigrator.App.ViewModels"
+        xmlns:ctl="using:DriveMigrator.App.Controls"
         x:Class="DriveMigrator.App.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
+        Classes="dialog"
         Title="Settings"
-        Width="780" Height="580"
-        MinWidth="560" MinHeight="420"
+        Width="640" Height="640"
+        MinWidth="560" MinHeight="480"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
   <Window.Styles>
-    <Style Selector="Border.banner">
-      <Setter Property="Padding" Value="12,8" />
-      <Setter Property="Margin" Value="0,0,0,8" />
-      <Setter Property="CornerRadius" Value="4" />
-    </Style>
-    <Style Selector="Border.card">
-      <Setter Property="Padding" Value="16" />
-      <Setter Property="CornerRadius" Value="6" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
-    </Style>
-    <Style Selector="TextBlock.muted">
-      <Setter Property="Opacity" Value="0.7" />
-      <Setter Property="TextWrapping" Value="Wrap" />
+    <Style Selector="ToggleButton.reveal:checked ctl|Icon">
+      <Setter Property="Kind" Value="EyeOff" />
     </Style>
   </Window.Styles>
 
-  <DockPanel Margin="16">
-    <!-- Warnings and errors -->
-    <Border DockPanel.Dock="Top" Classes="banner"
-            Background="{DynamicResource BannerWarningBrush}"
-            IsVisible="{Binding !IsSecretStorageProtected}">
-      <TextBlock TextWrapping="Wrap"
-                 Text="No system keyring is available, so sign-ins are stored in files readable only by your user account rather than in an encrypted keyring." />
-    </Border>
-    <Border DockPanel.Dock="Top" Classes="banner"
-            Background="{DynamicResource BannerErrorBrush}"
-            IsVisible="{Binding HasError}">
-      <DockPanel>
-        <Button DockPanel.Dock="Right" Content="Dismiss" Command="{Binding DismissErrorCommand}" VerticalAlignment="Top" />
-        <SelectableTextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" Margin="0,4,12,0" />
-      </DockPanel>
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Classes="heading" Margin="24,20,24,12" Text="Settings" />
+
+    <Border DockPanel.Dock="Top" Margin="24,0" BorderBrush="{DynamicResource border-100}" BorderThickness="0,0,0,1">
+      <TabStrip SelectedIndex="{Binding SelectedTab}" IsEnabled="{Binding IsIdle}">
+        <TabStripItem Content="Accounts" />
+        <TabStripItem Content="Credentials" />
+      </TabStrip>
     </Border>
 
-    <!-- Sign-in / busy state -->
-    <Border DockPanel.Dock="Bottom" Classes="banner" Margin="0,8,0,0"
-            Background="{DynamicResource BannerInfoBrush}"
-            IsVisible="{Binding IsBusy}">
-      <DockPanel>
-        <Button DockPanel.Dock="Right" Content="Cancel" Command="{Binding CancelSignInCommand}" />
-        <StackPanel Spacing="6" Margin="0,0,12,0">
-          <TextBlock Text="{Binding BusyMessage}" />
-          <ProgressBar IsIndeterminate="True" />
-        </StackPanel>
-      </DockPanel>
-    </Border>
-
-    <TabControl SelectedIndex="{Binding SelectedTab}" IsEnabled="{Binding IsIdle}">
-      <TabItem Header="Accounts">
-        <DockPanel Margin="0,12,0,0">
-          <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,12">
-            <ItemsControl ItemsSource="{Binding AddAccountOptions}">
-              <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <WrapPanel />
-                </ItemsPanelTemplate>
-              </ItemsControl.ItemsPanel>
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="vm:AddAccountOptionViewModel">
-                  <StackPanel Margin="0,0,12,0" Spacing="2">
-                    <Button Classes="accent" Content="{Binding Label}" Command="{Binding AddCommand}" IsEnabled="{Binding IsConfigured}" />
-                    <TextBlock Classes="muted" FontSize="12" Text="{Binding Hint}" IsVisible="{Binding !IsConfigured}" />
-                  </StackPanel>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
+    <!-- A sign-in in progress blocks the rest of the window; Cancel is the only way out. -->
+    <Border DockPanel.Dock="Bottom" Padding="16,8" IsVisible="{Binding IsBusy}"
+            BorderBrush="{DynamicResource border-100}" BorderThickness="0,1,0,0">
+      <Border Classes="banner info">
+        <DockPanel>
+          <ctl:Icon Classes="tone info" Kind="Info" />
+          <Button DockPanel.Dock="Right" Classes="secondary" VerticalAlignment="Top" Margin="8,0,0,0"
+                  Content="Cancel" Command="{Binding CancelSignInCommand}" />
+          <StackPanel Spacing="8">
+            <TextBlock TextWrapping="Wrap" Text="{Binding BusyMessage}" />
+            <ProgressBar IsIndeterminate="True" MaxWidth="260" HorizontalAlignment="Left" Width="260" />
           </StackPanel>
-
-          <Panel>
-            <TextBlock Classes="muted" IsVisible="{Binding !HasAccounts}"
-                       Text="No accounts connected yet. You can connect several accounts of the same service, e.g. a personal and a work OneDrive." />
-            <ScrollViewer IsVisible="{Binding HasAccounts}">
-              <ItemsControl ItemsSource="{Binding Accounts}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="vm:AccountItemViewModel">
-                    <Border Classes="card" Margin="0,0,0,8">
-                      <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-                        <StackPanel Spacing="2">
-                          <TextBlock FontWeight="SemiBold">
-                            <Run Text="{Binding DisplayName}" />
-                            <Run Text=" · " />
-                            <Run Text="{Binding ProviderName}" />
-                          </TextBlock>
-                          <TextBlock Classes="muted" Text="{Binding Email}" />
-                          <TextBlock Text="{Binding StatusText}" FontSize="12"
-                                     Foreground="{DynamicResource StatusErrorBrush}"
-                                     IsVisible="{Binding NeedsAttention}" />
-                          <TextBlock Text="{Binding StatusText}" FontSize="12"
-                                     Foreground="{DynamicResource StatusSuccessBrush}"
-                                     IsVisible="{Binding IsConnected}" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                          <Button Content="Re-authorize" Command="{Binding ReauthorizeCommand}" />
-                          <Button Content="Remove" Command="{Binding RemoveCommand}" />
-                        </StackPanel>
-                        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Classes="muted" FontSize="12" Margin="0,6,0,0"
-                                   Text="{Binding Error}" IsVisible="{Binding NeedsAttention}" />
-                      </Grid>
-                    </Border>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </ScrollViewer>
-          </Panel>
         </DockPanel>
-      </TabItem>
+      </Border>
+    </Border>
 
-      <TabItem Header="Credentials">
-        <ScrollViewer Margin="0,12,0,0">
-          <StackPanel Spacing="12">
-            <TextBlock Classes="muted"
-                       Text="Drive Migrator signs in with OAuth apps you register yourself, so your data only flows through apps you control. See docs/setup-google.md and docs/setup-microsoft.md for step-by-step instructions." />
-            <ItemsControl ItemsSource="{Binding Credentials}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="vm:ProviderCredentialsViewModel">
-                  <Border Classes="card" Margin="0,0,0,12">
-                    <StackPanel Spacing="10">
-                      <TextBlock FontSize="16" FontWeight="SemiBold" Text="{Binding DisplayName}" />
-                      <ItemsControl ItemsSource="{Binding Fields}">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate x:DataType="vm:CredentialFieldViewModel">
-                            <StackPanel Spacing="4" Margin="0,0,0,10">
-                              <TextBlock Text="{Binding Label}" />
-                              <TextBox Text="{Binding Value}"
-                                       PasswordChar="{Binding PasswordChar}"
-                                       Classes.revealPasswordButton="{Binding Field.IsSecret}"
-                                       PlaceholderText="{Binding Watermark}" />
-                              <TextBlock Classes="muted" FontSize="12" Text="{Binding Field.Help}" />
-                            </StackPanel>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                      <StackPanel Orientation="Horizontal" Spacing="12">
-                        <Button Classes="accent" Content="Save" Command="{Binding SaveCommand}" />
-                        <TextBlock VerticalAlignment="Center" Classes="muted" Text="{Binding StatusMessage}" />
+    <ScrollViewer>
+      <StackPanel Margin="24" Spacing="16">
+        <Border Classes="banner warning" IsVisible="{Binding !IsSecretStorageProtected}">
+          <DockPanel>
+            <ctl:Icon Classes="tone warning" Kind="Warning" />
+            <TextBlock TextWrapping="Wrap"
+                       Text="No system keyring is available, so sign-ins are stored in files readable only by your user account rather than in an encrypted keyring." />
+          </DockPanel>
+        </Border>
+        <Border Classes="banner danger" IsVisible="{Binding HasError}">
+          <DockPanel>
+            <ctl:Icon Classes="tone danger" Kind="Danger" />
+            <Button DockPanel.Dock="Right" Classes="icon" VerticalAlignment="Top" Margin="8,-4,-8,-4"
+                    Command="{Binding DismissErrorCommand}" ToolTip.Tip="Dismiss">
+              <ctl:Icon Kind="Close" />
+            </Button>
+            <SelectableTextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" />
+          </DockPanel>
+        </Border>
+
+        <!-- Accounts -->
+        <StackPanel Spacing="16" IsEnabled="{Binding IsIdle}"
+                    IsVisible="{Binding SelectedTab, Converter={x:Static vm:Converters.IndexEquals}, ConverterParameter=0}">
+          <ItemsControl ItemsSource="{Binding AddAccountOptions}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel ItemSpacing="8" LineSpacing="8" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:AddAccountOptionViewModel">
+                <StackPanel Spacing="4">
+                  <Button Classes="secondary" Content="{Binding Label}" Command="{Binding AddCommand}" IsEnabled="{Binding IsConfigured}" />
+                  <TextBlock Classes="body-sm muted" Text="{Binding Hint}" IsVisible="{Binding !IsConfigured}" />
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,16" TextAlignment="Center" IsVisible="{Binding !HasAccounts}"
+                     Text="No accounts connected yet. You can connect several accounts of the same service, such as a personal and a work OneDrive." />
+
+          <ItemsControl ItemsSource="{Binding Accounts}" IsVisible="{Binding HasAccounts}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Spacing="16" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:AccountItemViewModel">
+                <Border Classes="card">
+                  <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                      <StackPanel Spacing="2">
+                        <TextBlock Classes="body-strong" TextWrapping="Wrap">
+                          <Run Text="{Binding DisplayName}" /><Run Text=" · " /><Run Text="{Binding ProviderName}" />
+                        </TextBlock>
+                        <TextBlock Classes="body-sm muted" Text="{Binding Email}" />
+                        <TextBlock Classes="body-sm danger" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding Error}"
+                                   IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                       </StackPanel>
+                      <Border Grid.Column="1" Classes="pill success" IsVisible="{Binding IsConnected}">
+                        <StackPanel>
+                          <ctl:Icon Kind="Success" />
+                          <TextBlock Text="{Binding StatusText}" />
+                        </StackPanel>
+                      </Border>
+                      <Border Grid.Column="1" Classes="pill danger" IsVisible="{Binding NeedsAttention}">
+                        <StackPanel>
+                          <ctl:Icon Kind="Danger" />
+                          <TextBlock Text="{Binding StatusText}" />
+                        </StackPanel>
+                      </Border>
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                      <Button Classes="ghost" Content="Re-authorize" Command="{Binding ReauthorizeCommand}" />
+                      <Button Classes="ghost" Content="Remove" Command="{Binding RemoveCommand}" />
                     </StackPanel>
-                  </Border>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
-    </TabControl>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+        <!-- Credentials -->
+        <StackPanel Spacing="16" IsEnabled="{Binding IsIdle}"
+                    IsVisible="{Binding SelectedTab, Converter={x:Static vm:Converters.IndexEquals}, ConverterParameter=1}">
+          <TextBlock Classes="body-sm muted" TextWrapping="Wrap"
+                     Text="Drive Migrator signs in with OAuth apps you register yourself, so your data only flows through apps you control. See docs/setup-google.md and docs/setup-microsoft.md for step-by-step instructions." />
+          <ItemsControl ItemsSource="{Binding Credentials}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Spacing="16" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ProviderCredentialsViewModel">
+                <Border Classes="card">
+                  <StackPanel Spacing="12">
+                    <TextBlock Classes="heading-sm" Text="{Binding DisplayName}" />
+                    <ItemsControl ItemsSource="{Binding Fields}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <UniformGrid Columns="2" ColumnSpacing="16" RowSpacing="12" />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:CredentialFieldViewModel">
+                          <StackPanel Spacing="4">
+                            <TextBlock Classes="label" Text="{Binding Label}" />
+                            <TextBox Text="{Binding Value}"
+                                     PasswordChar="{Binding PasswordChar}"
+                                     Classes.secret="{Binding Field.IsSecret}"
+                                     PlaceholderText="{Binding Watermark}">
+                              <TextBox.InnerRightContent>
+                                <ToggleButton Classes="icon reveal" Width="26" Height="26" Margin="0,0,1,0"
+                                              IsVisible="{Binding Field.IsSecret}"
+                                              IsChecked="{Binding $parent[TextBox].RevealPassword, Mode=TwoWay}"
+                                              ToolTip.Tip="Show or hide the value">
+                                  <ctl:Icon Kind="Eye" />
+                                </ToggleButton>
+                              </TextBox.InnerRightContent>
+                            </TextBox>
+                            <TextBlock Classes="body-sm muted" TextWrapping="Wrap" Text="{Binding Field.Help}"
+                                       IsVisible="{Binding Field.Help, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <DockPanel Margin="0,4,0,0">
+                      <Button Classes="secondary" Content="Save" Command="{Binding SaveCommand}" />
+                      <TextBlock Classes="body-sm muted" Margin="12,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Right"
+                                 TextWrapping="Wrap" Text="{Binding StatusMessage}" />
+                    </DockPanel>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
   </DockPanel>
 </Window>

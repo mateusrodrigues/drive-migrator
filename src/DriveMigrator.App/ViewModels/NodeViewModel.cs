@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
-using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
+using DriveMigrator.App.Controls;
 using DriveMigrator.Core;
 using DriveMigrator.Core.Accounts;
 
@@ -39,10 +39,11 @@ public sealed partial class NodeViewModel : ViewModelBase
     }
 
     // Placeholder rows ("Loading…", errors) give containers an expander before their children are known.
-    private NodeViewModel(string message)
+    private NodeViewModel(string message, bool isError)
     {
         Capability = null!;
         IsPlaceholder = true;
+        IsError = isError;
         PlaceholderText = message;
         _selectionChanged = static () => { };
         Children = [];
@@ -57,6 +58,9 @@ public sealed partial class NodeViewModel : ViewModelBase
 
     public bool IsPlaceholder { get; }
 
+    /// <summary>A placeholder saying the children couldn't be loaded.</summary>
+    public bool IsError { get; }
+
     private string? PlaceholderText { get; }
 
     public bool IsCapabilityRoot => !IsPlaceholder && Node is null;
@@ -65,7 +69,7 @@ public sealed partial class NodeViewModel : ViewModelBase
 
     public string Name => PlaceholderText ?? Node?.Name ?? Capability.DisplayName;
 
-    public Geometry? Icon => IsPlaceholder ? null : Node is null ? NodeIcons.ForCapability(Capability.Kind) : NodeIcons.ForNode(Node);
+    public IconKind Icon => IsPlaceholder ? IconKind.None : Node is null ? NodeIcons.ForCapability(Capability.Kind) : NodeIcons.ForNode(Node);
 
     /// <summary>Secondary text: file size, or a note that a native document will be exported.</summary>
     public string? Detail => Node switch
@@ -219,13 +223,13 @@ public sealed partial class NodeViewModel : ViewModelBase
         }
         catch (ReauthenticationRequiredException ex)
         {
-            Children = [Placeholder($"{ex.Message} Re-authorize the account in Settings.")];
+            Children = [Placeholder($"{ex.Message} Re-authorize the account in Settings.", isError: true)];
         }
 #pragma warning disable CA1031 // Any provider failure is shown in the tree; collapsing and expanding retries.
         catch (Exception ex)
 #pragma warning restore CA1031
         {
-            Children = [Placeholder($"Couldn't load: {ex.Message}")];
+            Children = [Placeholder($"Couldn't load: {ex.Message}", isError: true)];
         }
         finally
         {
@@ -290,7 +294,7 @@ public sealed partial class NodeViewModel : ViewModelBase
         SetChecked(state, updateChildren: false, updateParent: true);
     }
 
-    private static NodeViewModel Placeholder(string message) => new(message);
+    private static NodeViewModel Placeholder(string message, bool isError = false) => new(message, isError);
 
     internal static string FormatSize(long bytes)
     {

@@ -18,8 +18,8 @@ internal sealed class DialogService(IServiceProvider services) : IDialogService
         await window.ShowDialog(Owner());
     }
 
-    public Task<bool> ConfirmAsync(string title, string message, string confirmText)
-        => new ConfirmDialog(title, message, confirmText).ShowDialog<bool>(Owner());
+    public Task<bool> ConfirmAsync(string title, string message, string confirmText, bool destructive = false)
+        => new ConfirmDialog(title, message, confirmText, destructive: destructive).ShowDialog<bool>(Owner());
 
     public Task ShowMessageAsync(string title, string message)
         => new ConfirmDialog(title, message, "OK", showCancel: false).ShowDialog(Owner());

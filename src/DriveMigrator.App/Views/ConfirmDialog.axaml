@@ -1,15 +1,23 @@
+<!--
+  ConfirmDialog (Cancel plus a named action) and MessageDialog (OK only). The body states the exact consequence;
+  Cancel comes first so the safer choice is the default.
+-->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="DriveMigrator.App.Views.ConfirmDialog"
-        Width="480" SizeToContent="Height"
+        Classes="dialog"
+        Width="440" SizeToContent="Height"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
-  <StackPanel Margin="20" Spacing="16">
-    <SelectableTextBlock x:Name="MessageText" TextWrapping="Wrap" />
-    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-      <Button x:Name="CancelButton" Content="Cancel" IsCancel="True" Click="OnCancel" />
-      <Button x:Name="ConfirmButton" Classes="accent" IsDefault="True" Click="OnConfirm" />
-    </StackPanel>
-  </StackPanel>
+  <DockPanel>
+    <TextBlock x:Name="TitleText" DockPanel.Dock="Top" Classes="heading" Margin="20,20,20,0" TextWrapping="Wrap" />
+    <Border DockPanel.Dock="Bottom" Classes="dialog-footer">
+      <StackPanel>
+        <Button x:Name="CancelButton" Classes="secondary" Content="Cancel" IsCancel="True" Click="OnCancel" />
+        <Button x:Name="ConfirmButton" Classes="primary" Click="OnConfirm" />
+      </StackPanel>
+    </Border>
+    <SelectableTextBlock x:Name="MessageText" Margin="20,16" TextWrapping="Wrap" />
+  </DockPanel>
 </Window>

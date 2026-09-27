@@ -40,6 +40,14 @@ public sealed partial class TransferOptionsViewModel : ViewModelBase
 
     public string Summary { get; }
 
+    /// <summary>The summary's first line: "From … to …".</summary>
+    public string SummaryTitle => SummaryLines[0];
+
+    /// <summary>The rest of the summary: one "• service: counts → destination" line per service.</summary>
+    public string SummaryDetails => string.Join(Environment.NewLine, SummaryLines.Skip(1));
+
+    private string[] SummaryLines => Summary.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) is { Length: > 0 } lines ? lines : [string.Empty];
+
     /// <summary>File conflict choices only matter when drive items are being copied.</summary>
     public bool HasFiles { get; }
 

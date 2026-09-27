@@ -1,0 +1,227 @@
+<!--
+  Control themes for the design system's controls whose shape differs from Fluent's: the 16px tri-state check box,
+  the radio, the tree row and the flat-underline tab. They replace Fluent's default theme for those types.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ctl="using:DriveMigrator.App.Controls"
+                    xmlns:converters="using:Avalonia.Controls.Converters">
+
+  <!-- CheckboxTri: unchecked, checked, or indeterminate ("partly selected"). -->
+  <ControlTheme x:Key="{x:Type CheckBox}" TargetType="CheckBox">
+    <Setter Property="Foreground" Value="{DynamicResource ink-100}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="8,0,0,0" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid ColumnDefinitions="Auto,*" Background="{TemplateBinding Background}">
+          <Border Name="Box"
+                  Width="16" Height="16" Margin="0,2,0,0"
+                  VerticalAlignment="Top"
+                  CornerRadius="{StaticResource radius-sm}"
+                  BorderThickness="1.5"
+                  BorderBrush="{DynamicResource border-200}"
+                  Background="{DynamicResource surface-200}">
+            <ctl:Icon Name="Glyph" Width="11" Height="11" Foreground="{DynamicResource accent-100-on}" />
+          </Border>
+          <ContentPresenter Name="PART_ContentPresenter"
+                            Grid.Column="1"
+                            Margin="{TemplateBinding Padding}"
+                            VerticalAlignment="Center"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            IsVisible="{TemplateBinding Content, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            TextWrapping="Wrap" />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:pointerover /template/ Border#Box">
+      <Setter Property="BorderBrush" Value="{DynamicResource accent-100}" />
+    </Style>
+    <Style Selector="^:checked /template/ Border#Box, ^:indeterminate /template/ Border#Box">
+      <Setter Property="Background" Value="{DynamicResource accent-100}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource accent-100}" />
+    </Style>
+    <Style Selector="^:checked /template/ ctl|Icon#Glyph">
+      <Setter Property="Kind" Value="Check" />
+    </Style>
+    <Style Selector="^:indeterminate /template/ ctl|Icon#Glyph">
+      <Setter Property="Kind" Value="Dash" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="0.5" />
+    </Style>
+    <!-- The compact box inside a tree row: no label, centred in the row. -->
+    <Style Selector="^.node">
+      <Setter Property="Padding" Value="0" />
+      <Style Selector="^ /template/ Border#Box">
+        <Setter Property="Margin" Value="0" />
+      </Style>
+    </Style>
+  </ControlTheme>
+
+  <!-- RadioGroup option: a 16px ring that fills in with a thick accent edge when chosen. -->
+  <ControlTheme x:Key="{x:Type RadioButton}" TargetType="RadioButton">
+    <Setter Property="Foreground" Value="{DynamicResource ink-100}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="8,0,0,0" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid ColumnDefinitions="Auto,*" Background="{TemplateBinding Background}">
+          <Ellipse Name="Ring"
+                   Width="16" Height="16" Margin="0,2,0,0"
+                   VerticalAlignment="Top"
+                   StrokeThickness="1.5"
+                   Stroke="{DynamicResource border-200}"
+                   Fill="{DynamicResource surface-200}" />
+          <ContentPresenter Name="PART_ContentPresenter"
+                            Grid.Column="1"
+                            Margin="{TemplateBinding Padding}"
+                            VerticalAlignment="Center"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            TextWrapping="Wrap" />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:pointerover /template/ Ellipse#Ring">
+      <Setter Property="Stroke" Value="{DynamicResource accent-100}" />
+    </Style>
+    <Style Selector="^:checked /template/ Ellipse#Ring">
+      <Setter Property="Stroke" Value="{DynamicResource accent-100}" />
+      <Setter Property="StrokeThickness" Value="5" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="0.6" />
+    </Style>
+  </ControlTheme>
+
+  <!-- Tabs: a flat underline, label style; the active tab changes colour as well as gaining the accent line. -->
+  <ControlTheme x:Key="{x:Type TabStripItem}" TargetType="TabStripItem">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource ink-200}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="PART_LayoutRoot"
+                Background="{TemplateBinding Background}"
+                CornerRadius="4,4,0,0">
+          <Panel>
+            <ContentPresenter Name="PART_ContentPresenter"
+                              Margin="{TemplateBinding Padding}"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+            <Border Name="Underline" Height="2" VerticalAlignment="Bottom" />
+          </Panel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:pointerover">
+      <Setter Property="Background" Value="{DynamicResource row-hover}" />
+      <Setter Property="Foreground" Value="{DynamicResource ink-100}" />
+    </Style>
+    <Style Selector="^:selected">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource ink-100}" />
+      <Style Selector="^ /template/ Border#Underline">
+        <Setter Property="Background" Value="{DynamicResource accent-100}" />
+      </Style>
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="0.5" />
+    </Style>
+  </ControlTheme>
+
+  <!-- The tree row's expander: a 16px slot with a chevron that turns down when expanded. -->
+  <ControlTheme x:Key="TreeChevron" TargetType="ToggleButton">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Width="16" Height="16" Background="Transparent">
+          <ctl:Icon Name="Chevron" Width="13" Height="13" Kind="ChevronRight" Foreground="{DynamicResource ink-200}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:checked /template/ ctl|Icon#Chevron">
+      <Setter Property="Kind" Value="ChevronDown" />
+    </Style>
+  </ControlTheme>
+
+  <!--
+    TreeRow: [expander][check box][glyph][name][detail]. The expander keeps its 16px slot on rows without children so
+    every row shares one left edge. The selected row is the destination highlight: an accent-soft wash plus an edge.
+  -->
+  <ControlTheme x:Key="{x:Type TreeViewItem}" TargetType="TreeViewItem">
+    <Setter Property="Padding" Value="0,0,8,0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource radius-md}" />
+    <Setter Property="Foreground" Value="{DynamicResource ink-100}" />
+    <Setter Property="MinHeight" Value="30" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel>
+          <Border Name="PART_LayoutRoot"
+                  Focusable="True"
+                  Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  CornerRadius="{TemplateBinding CornerRadius}"
+                  MinHeight="{TemplateBinding MinHeight}"
+                  TemplatedControl.IsTemplateFocusTarget="True">
+            <Grid Name="PART_Header" ColumnDefinitions="Auto,*">
+              <Grid.Margin>
+                <MultiBinding Converter="{x:Static converters:TreeViewItemIndentConverter.Instance}">
+                  <Binding Path="Level" RelativeSource="{RelativeSource TemplatedParent}" />
+                  <DynamicResource ResourceKey="TreeViewItemIndent" />
+                </MultiBinding>
+              </Grid.Margin>
+              <ToggleButton Name="PART_ExpandCollapseChevron"
+                            Theme="{StaticResource TreeChevron}"
+                            Margin="3,0,8,0"
+                            Focusable="False"
+                            IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}" />
+              <ContentPresenter Name="PART_HeaderPresenter"
+                                Grid.Column="1"
+                                Focusable="False"
+                                Background="Transparent"
+                                Content="{TemplateBinding Header}"
+                                ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Margin="{TemplateBinding Padding}" />
+            </Grid>
+          </Border>
+          <ItemsPresenter Name="PART_ItemsPresenter"
+                          IsVisible="{TemplateBinding IsExpanded}"
+                          ItemsPanel="{TemplateBinding ItemsPanel}" />
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^ /template/ Border#PART_LayoutRoot:pointerover">
+      <Setter Property="Background" Value="{DynamicResource row-hover}" />
+    </Style>
+    <Style Selector="^:selected /template/ Border#PART_LayoutRoot">
+      <Setter Property="Background" Value="{DynamicResource accent-soft}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource accent-soft-border}" />
+    </Style>
+    <Style Selector="^:empty /template/ ToggleButton#PART_ExpandCollapseChevron">
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="0.5" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

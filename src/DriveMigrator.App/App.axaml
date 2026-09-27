@@ -4,25 +4,20 @@
              RequestedThemeVariant="Default">
   <Application.Resources>
     <ResourceDictionary>
-      <ResourceDictionary.ThemeDictionaries>
-        <ResourceDictionary x:Key="Light">
-          <SolidColorBrush x:Key="BannerErrorBrush" Color="#FDE7E9" />
-          <SolidColorBrush x:Key="BannerWarningBrush" Color="#FFF4CE" />
-          <SolidColorBrush x:Key="BannerInfoBrush" Color="#EAF1FB" />
-          <SolidColorBrush x:Key="StatusErrorBrush" Color="#C42B1C" />
-          <SolidColorBrush x:Key="StatusSuccessBrush" Color="#0F7B0F" />
-        </ResourceDictionary>
-        <ResourceDictionary x:Key="Dark">
-          <SolidColorBrush x:Key="BannerErrorBrush" Color="#442726" />
-          <SolidColorBrush x:Key="BannerWarningBrush" Color="#433519" />
-          <SolidColorBrush x:Key="BannerInfoBrush" Color="#2B3340" />
-          <SolidColorBrush x:Key="StatusErrorBrush" Color="#FF99A4" />
-          <SolidColorBrush x:Key="StatusSuccessBrush" Color="#6CCB5F" />
-        </ResourceDictionary>
-      </ResourceDictionary.ThemeDictionaries>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="/Themes/Tokens.axaml" />
+        <ResourceInclude Source="/Themes/ControlThemes.axaml" />
+      </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
   </Application.Resources>
   <Application.Styles>
-    <FluentTheme />
+    <FluentTheme>
+      <!-- accent-100 and surface-100, for the few stock visuals left untouched (scroll bars, text selection). -->
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Light" Accent="#2952CC" RegionColor="#F6F7F9" ErrorText="#B3261E" />
+        <ColorPaletteResources x:Key="Dark" Accent="#7096F7" RegionColor="#0F1319" ErrorText="#FF8570" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="/Themes/Controls.axaml" />
   </Application.Styles>
 </Application>

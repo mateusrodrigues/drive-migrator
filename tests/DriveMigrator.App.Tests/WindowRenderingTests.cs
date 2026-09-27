@@ -161,7 +161,39 @@ public sealed class WindowRenderingTests : IDisposable
         vm.Transfers.Jobs[0].Refresh();
         vm.Transfers.Jobs[0].ShowFailures = true;
         Capture(window, "main-transfers");
+
+        Application.Current!.RequestedThemeVariant = ThemeVariant.Dark;
+        Capture(window, "main-transfers-dark");
+        Application.Current.RequestedThemeVariant = ThemeVariant.Default;
         window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task MainWindow_RendersFirstRun()
+    {
+        using var transfers = new TempTransfers(_accounts);
+        using var vm = new MainWindowViewModel(_accounts, new ProviderRegistry([_google, _microsoft]), new FakeDialogService(), transfers.Manager);
+        var window = new MainWindow { DataContext = vm };
+        window.Show();
+        await vm.InitializeAsync();
+
+        Assert.Equal("No accounts connected", vm.Left.AccountPlaceholder);
+        Capture(window, "main-empty");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void ConfirmAndMessageDialogs_Render()
+    {
+        var confirm = new ConfirmDialog("Remove account", "Remove ada@outlook.com (Microsoft)? Its saved sign-in will be deleted from this computer. No data in the account is changed.", "Remove", destructive: true);
+        confirm.Show();
+        Capture(confirm, "confirm-dialog");
+        confirm.Close();
+
+        var message = new ConfirmDialog("Can't copy yet", "Check the items you want to copy in the left pane.", "OK", showCancel: false);
+        message.Show();
+        Capture(message, "message-dialog");
+        message.Close();
     }
 
     [AvaloniaFact]
@@ -192,6 +224,27 @@ public sealed class WindowRenderingTests : IDisposable
         var window = new TransferOptionsWindow { DataContext = vm };
         window.Show();
         Capture(window, "transfer-options");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Icons_RenderEveryGlyph()
+    {
+        var sheet = new WrapPanel { Margin = new Thickness(8) };
+        foreach (var kind in Enum.GetValues<Controls.IconKind>().Skip(1))
+        {
+            sheet.Children.Add(new StackPanel
+            {
+                Width = 96,
+                Margin = new Thickness(0, 0, 0, 12),
+                Spacing = 4,
+                Children = { new Controls.Icon { Kind = kind, Width = 32, Height = 32 }, new TextBlock { Text = kind.ToString() } },
+            });
+        }
+
+        var window = new Window { Content = sheet, Width = 500, Height = 400 };
+        window.Show();
+        Capture(window, "icons");
         window.Close();
     }
 

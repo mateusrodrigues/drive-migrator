@@ -4,7 +4,11 @@ public interface IDialogService
 {
     Task ShowSettingsAsync();
 
-    Task<bool> ConfirmAsync(string title, string message, string confirmText);
+    /// <summary>
+    /// Asks a yes/no question. <paramref name="confirmText"/> names the action ("Remove"), never a bare "Yes";
+    /// <paramref name="destructive"/> shows it as a danger button.
+    /// </summary>
+    Task<bool> ConfirmAsync(string title, string message, string confirmText, bool destructive = false);
 
     Task ShowMessageAsync(string title, string message);
 

@@ -1,62 +1,73 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:DriveMigrator.App.ViewModels"
+             xmlns:ctl="using:DriveMigrator.App.Controls"
              x:Class="DriveMigrator.App.Views.PaneView"
              x:DataType="vm:PaneViewModel">
   <UserControl.Styles>
     <Style Selector="TreeViewItem" x:DataType="vm:NodeViewModel">
       <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
     </Style>
-    <Style Selector="CheckBox.node">
-      <Setter Property="MinWidth" Value="0" />
-      <Setter Property="MinHeight" Value="0" />
-      <Setter Property="Padding" Value="0" />
-      <Setter Property="Margin" Value="0,0,6,0" />
+    <!-- Placeholder rows (loading, truncated, error) are italic; an error is also danger-toned. -->
+    <Style Selector="TextBlock.placeholder">
+      <Setter Property="FontStyle" Value="Italic" />
+      <Setter Property="Foreground" Value="{DynamicResource ink-200}" />
     </Style>
-    <Style Selector="TextBlock.muted">
-      <Setter Property="Opacity" Value="0.65" />
+    <Style Selector="TextBlock.placeholder.error">
+      <Setter Property="Foreground" Value="{DynamicResource danger-100}" />
     </Style>
   </UserControl.Styles>
 
-  <Border BorderThickness="1" CornerRadius="6" Padding="8"
-          BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+  <Border CornerRadius="{StaticResource radius-lg}" BorderThickness="1" ClipToBounds="True"
+          BorderBrush="{DynamicResource border-100}" Background="{DynamicResource surface-200}">
     <DockPanel>
-      <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-      <Button DockPanel.Dock="Right" Margin="6,0,0,0" VerticalAlignment="Stretch"
-              Command="{Binding RefreshCommand}" IsEnabled="{Binding HasAccount}"
-              ToolTip.Tip="Reload this account's tree">
-        <PathIcon Width="14" Height="14" Data="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z" />
-      </Button>
-      <ComboBox HorizontalAlignment="Stretch"
-                ItemsSource="{Binding Accounts}" SelectedItem="{Binding SelectedAccount}"
-                PlaceholderText="Choose an account" IsEnabled="{Binding HasAnyAccounts}">
-        <ComboBox.ItemTemplate>
-          <DataTemplate x:DataType="vm:AccountOptionViewModel">
-            <StackPanel>
-              <TextBlock Text="{Binding Label}" />
-              <TextBlock Classes="muted" FontSize="12" Text="{Binding Email}" />
-            </StackPanel>
-          </DataTemplate>
-        </ComboBox.ItemTemplate>
-      </ComboBox>
-      </DockPanel>
+      <!-- AccountPicker, with refresh beside it rather than inside it. -->
+      <Border DockPanel.Dock="Top" Padding="8" BorderBrush="{DynamicResource border-100}" BorderThickness="0,0,0,1">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+          <ComboBox Classes="account" HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding Accounts}" SelectedItem="{Binding SelectedAccount}"
+                    PlaceholderText="{Binding AccountPlaceholder}" IsEnabled="{Binding HasAnyAccounts}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:AccountOptionViewModel">
+                <StackPanel Spacing="1">
+                  <TextBlock Classes="body-strong" TextTrimming="CharacterEllipsis" Text="{Binding Label}" />
+                  <TextBlock Classes="body-sm muted" TextTrimming="CharacterEllipsis" Text="{Binding Email}" />
+                </StackPanel>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <Button Grid.Column="1" Classes="icon" Command="{Binding RefreshCommand}" IsEnabled="{Binding HasAccount}"
+                  ToolTip.Tip="Reload this account's folders">
+            <ctl:Icon Kind="Refresh" />
+          </Button>
+        </Grid>
+      </Border>
 
-      <StackPanel DockPanel.Dock="Bottom" Margin="4,8,4,0" Spacing="2" IsVisible="{Binding HasAccount}">
-        <TextBlock Classes="muted" FontSize="12" Text="{Binding SelectionSummary}" TextTrimming="CharacterEllipsis" />
-        <TextBlock Classes="muted" FontSize="12" Text="{Binding DestinationSummary}" TextTrimming="CharacterEllipsis" />
-      </StackPanel>
+      <!-- What's checked here, and where copies into this pane land. -->
+      <Border DockPanel.Dock="Bottom" Padding="12,8" BorderBrush="{DynamicResource border-100}" BorderThickness="0,1,0,0">
+        <StackPanel Spacing="2">
+          <TextBlock Classes="body-sm" Text="{Binding SelectionSummary}" TextTrimming="CharacterEllipsis" />
+          <TextBlock Classes="body-sm muted" Text="{Binding DestinationSummary}" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+      </Border>
 
-      <Panel>
-        <TextBlock Classes="muted" Margin="4" TextWrapping="Wrap" IsVisible="{Binding !HasAnyAccounts}"
+      <Panel Background="{DynamicResource surface-300}">
+        <TextBlock Classes="body muted" Margin="32" TextWrapping="Wrap" TextAlignment="Center"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   IsVisible="{Binding !HasAnyAccounts}"
                    Text="Connect accounts in Settings to browse them here." />
-        <TreeView ItemsSource="{Binding Roots}" SelectedItem="{Binding SelectedNode}" IsVisible="{Binding HasAccount}">
+        <TreeView Padding="4" ItemsSource="{Binding Roots}" SelectedItem="{Binding SelectedNode}" IsVisible="{Binding HasAccount}">
           <TreeView.ItemTemplate>
             <TreeDataTemplate x:DataType="vm:NodeViewModel" ItemsSource="{Binding Children}">
-              <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <CheckBox Classes="node" IsThreeState="False" IsChecked="{Binding IsChecked}" IsVisible="{Binding !IsPlaceholder}" />
-                <PathIcon Width="16" Height="16" Margin="0,0,6,0" Data="{Binding Icon}" IsVisible="{Binding !IsPlaceholder}" />
-                <TextBlock VerticalAlignment="Center" Text="{Binding Name}" FontStyle="{Binding IsPlaceholder, Converter={x:Static vm:Converters.ItalicIfTrue}}" />
-                <TextBlock Classes="muted" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" Text="{Binding Detail}" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Panel Width="16">
+                  <CheckBox Classes="node" IsThreeState="False" IsChecked="{Binding IsChecked}" IsVisible="{Binding !IsPlaceholder}" />
+                </Panel>
+                <ctl:Icon Classes="muted" Kind="{Binding Icon}" IsVisible="{Binding !IsPlaceholder}" />
+                <ctl:Icon Classes="danger" Kind="Danger" IsVisible="{Binding IsError}" />
+                <TextBlock VerticalAlignment="Center" Text="{Binding Name}"
+                           Classes.placeholder="{Binding IsPlaceholder}" Classes.error="{Binding IsError}" />
+                <TextBlock Classes="body-sm muted" VerticalAlignment="Center" Text="{Binding Detail}" />
               </StackPanel>
             </TreeDataTemplate>
           </TreeView.ItemTemplate>

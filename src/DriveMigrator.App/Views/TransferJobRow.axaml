@@ -1,0 +1,82 @@
+<!--
+  One row in the transfers panel. Calm at every state: an ordinary failure only adds to the count in the status line;
+  the one danger-coloured line is a problem that stops the whole transfer.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DriveMigrator.App.ViewModels"
+             xmlns:ctl="using:DriveMigrator.App.Controls"
+             x:Class="DriveMigrator.App.Views.TransferJobRow"
+             x:DataType="vm:TransferJobViewModel">
+  <Border Padding="12" CornerRadius="{StaticResource radius-md}" BorderThickness="1"
+          BorderBrush="{DynamicResource border-100}" Background="{DynamicResource surface-200}">
+    <StackPanel Spacing="6">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+        <TextBlock Classes="body-strong" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                   Text="{Binding Title}" ToolTip.Tip="{Binding Title}" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2">
+          <Button Classes="icon" Command="{Binding PauseCommand}" IsVisible="{Binding IsRunning}" ToolTip.Tip="Pause">
+            <ctl:Icon Kind="Pause" />
+          </Button>
+          <Button Classes="icon" Command="{Binding ResumeCommand}" IsVisible="{Binding IsPaused}" ToolTip.Tip="Resume">
+            <ctl:Icon Kind="Play" />
+          </Button>
+          <Button Classes="icon" Command="{Binding RetryFailedCommand}" ToolTip.Tip="Retry failed"
+                  IsVisible="{Binding CanRetryFailed}">
+            <ctl:Icon Kind="Refresh" />
+          </Button>
+          <ToggleButton Classes="ghost" IsChecked="{Binding ShowFailures}" IsVisible="{Binding HasFailures}">
+            <Panel>
+              <TextBlock Text="Errors" IsVisible="{Binding !ShowFailures}" />
+              <TextBlock Text="Hide errors" IsVisible="{Binding ShowFailures}" />
+            </Panel>
+          </ToggleButton>
+          <Button Classes="icon" Command="{Binding RemoveCommand}" ToolTip.Tip="Remove">
+            <ctl:Icon Kind="Trash" />
+          </Button>
+        </StackPanel>
+      </Grid>
+
+      <TextBlock Classes="body-sm muted" TextTrimming="CharacterEllipsis">
+        <Run Text="{Binding StatusText}" /><Run Text=" · " /><Run Text="{Binding Details}" />
+      </TextBlock>
+
+      <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}"
+                   IsIndeterminate="{Binding IsIndeterminate}" IsVisible="{Binding IsActive}" />
+
+      <TextBlock Classes="body-sm muted" FontStyle="Italic" TextTrimming="CharacterEllipsis"
+                 Text="{Binding WorkingOn}" IsVisible="{Binding WorkingOn, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+      <DockPanel IsVisible="{Binding Problem, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <ctl:Icon Classes="danger" Kind="Danger" Width="13" Height="13" Margin="0,2,4,0" VerticalAlignment="Top" />
+        <TextBlock Classes="body-sm danger" TextWrapping="Wrap" Text="{Binding Problem}" />
+      </DockPanel>
+
+      <Border IsVisible="{Binding ShowFailures}" Margin="0,4,0,0" Padding="0,8,0,0"
+              BorderBrush="{DynamicResource border-100}" BorderThickness="0,1,0,0">
+        <StackPanel Spacing="6">
+          <ItemsControl ItemsSource="{Binding Failures}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Spacing="6" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:TransferFailureLine">
+                <SelectableTextBlock Classes="body-sm" TextWrapping="Wrap">
+                  <Run Foreground="{DynamicResource ink-200}" Text="{Binding Name}" /><Run Foreground="{DynamicResource ink-200}" Text=": " /><Run Text="{Binding Message}" />
+                </SelectableTextBlock>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Panel HorizontalAlignment="Left">
+            <Button Classes="ghost" Content="Copy error details" Command="{Binding CopyErrorDetailsCommand}"
+                    IsVisible="{Binding !CopiedDetails}"
+                    ToolTip.Tip="Copies the full technical details of these errors, to include in a bug report" />
+            <Button Classes="ghost" Content="Copied." IsVisible="{Binding CopiedDetails}" IsHitTestVisible="False" Focusable="False" />
+          </Panel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </Border>
+</UserControl>

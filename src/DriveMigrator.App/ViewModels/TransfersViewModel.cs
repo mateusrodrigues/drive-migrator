@@ -70,7 +70,7 @@ public sealed partial class TransferJobViewModel : ViewModelBase, IDisposable
 
     public string Title => Job.Title;
 
-    public ObservableCollection<string> Failures { get; } = [];
+    public ObservableCollection<TransferFailureLine> Failures { get; } = [];
 
     [ObservableProperty]
     public partial string StatusText { get; private set; } = string.Empty;
@@ -91,8 +91,13 @@ public sealed partial class TransferJobViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     public partial bool IsIndeterminate { get; private set; }
 
+    /// <summary>Running or paused: still has a progress bar. Finished jobs show only their status line.</summary>
+    [ObservableProperty]
+    public partial bool IsActive { get; private set; }
+
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(PauseCommand), nameof(ResumeCommand), nameof(RetryFailedCommand))]
+    [NotifyPropertyChangedFor(nameof(CanRetryFailed))]
     public partial bool IsRunning { get; private set; }
 
     [ObservableProperty]
@@ -101,7 +106,11 @@ public sealed partial class TransferJobViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RetryFailedCommand))]
+    [NotifyPropertyChangedFor(nameof(CanRetryFailed))]
     public partial bool HasFailures { get; private set; }
+
+    /// <summary>Some items failed and the job isn't running, so they can be tried again.</summary>
+    public bool CanRetryFailed => HasFailures && !IsRunning;
 
     [ObservableProperty]
     public partial bool ShowFailures { get; set; }
@@ -113,6 +122,7 @@ public sealed partial class TransferJobViewModel : ViewModelBase, IDisposable
         var counts = Job.Counts;
         IsRunning = Job.Status == JobStatus.Running;
         IsPaused = Job.Status == JobStatus.Paused;
+        IsActive = IsRunning || IsPaused;
         HasFailures = counts.Failed > 0;
         Problem = Job.Problem;
         var current = IsRunning ? Job.CurrentItems : [];
@@ -168,9 +178,7 @@ public sealed partial class TransferJobViewModel : ViewModelBase, IDisposable
     [RelayCommand(CanExecute = nameof(IsPaused))]
     private void Resume() => _manager.Resume(Job);
 
-    private bool CanRetry() => HasFailures && !IsRunning;
-
-    [RelayCommand(CanExecute = nameof(CanRetry))]
+    [RelayCommand(CanExecute = nameof(CanRetryFailed))]
     private void RetryFailed()
     {
         ShowFailures = false;
@@ -182,7 +190,7 @@ public sealed partial class TransferJobViewModel : ViewModelBase, IDisposable
     private async Task RemoveAsync()
     {
         if (Job.Status is JobStatus.Running or JobStatus.Paused
-            && !await _dialogs.ConfirmAsync("Remove transfer", $"Stop and forget \"{Title}\"? Items already copied stay where they are.", "Remove"))
+            && !await _dialogs.ConfirmAsync("Remove transfer", $"Stop and forget \"{Title}\"? Items already copied stay where they are.", "Remove", destructive: true))
         {
             return;
         }
@@ -210,9 +218,12 @@ public sealed partial class TransferJobViewModel : ViewModelBase, IDisposable
         Failures.Clear();
         foreach (var item in _manager.GetFailures(Job))
         {
-            Failures.Add($"{item.Name}: {item.Error}");
+            Failures.Add(new TransferFailureLine(item.Name, item.Error));
         }
     }
 
     private void OnJobChanged(object? sender, EventArgs e) => OnUiThread(Refresh);
 }
+
+/// <summary>One failed item in a job's error list: its name, and what went wrong with it.</summary>
+public sealed record TransferFailureLine(string Name, string? Message);

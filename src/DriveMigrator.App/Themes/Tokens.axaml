@@ -1,0 +1,293 @@
+<!--
+  Drive Migrator design tokens (design/tokens.json), light and dark. Keys are the token names, so styles and views
+  say {DynamicResource surface-100} rather than a literal color. The second half of each theme maps Fluent's own
+  resource keys onto the tokens so stock controls pick them up; it is repeated per theme because each mapping has to
+  resolve to that theme's brush.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="surface-100" Color="#F6F7F9" />
+      <SolidColorBrush x:Key="surface-200" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="surface-300" Color="#EDF0F4" />
+      <SolidColorBrush x:Key="row-hover" Color="#EEF1F6" />
+      <SolidColorBrush x:Key="overlay-scrim" Color="#7A0F1720" />
+      <SolidColorBrush x:Key="border-100" Color="#D9DEE5" />
+      <SolidColorBrush x:Key="border-200" Color="#7E889A" />
+      <SolidColorBrush x:Key="ink-100" Color="#1A2029" />
+      <SolidColorBrush x:Key="ink-200" Color="#4B5563" />
+      <SolidColorBrush x:Key="ink-300" Color="#98A2B3" />
+      <SolidColorBrush x:Key="accent-100" Color="#2952CC" />
+      <SolidColorBrush x:Key="accent-100-hover" Color="#234699" />
+      <SolidColorBrush x:Key="accent-100-pressed" Color="#1C3878" />
+      <SolidColorBrush x:Key="accent-100-on" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="accent-soft" Color="#E7EDFB" />
+      <SolidColorBrush x:Key="accent-soft-border" Color="#B9C8F2" />
+      <SolidColorBrush x:Key="focus-ring" Color="#2F6FED" />
+      <SolidColorBrush x:Key="success-100" Color="#0F7A68" />
+      <SolidColorBrush x:Key="success-soft" Color="#E2F4EF" />
+      <SolidColorBrush x:Key="success-on" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="warning-100" Color="#8A5A0B" />
+      <SolidColorBrush x:Key="warning-soft" Color="#FBF0D9" />
+      <SolidColorBrush x:Key="warning-on" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="danger-100" Color="#B3261E" />
+      <SolidColorBrush x:Key="danger-100-hover" Color="#96201A" />
+      <SolidColorBrush x:Key="danger-100-pressed" Color="#7A1A15" />
+      <SolidColorBrush x:Key="danger-soft" Color="#FBE9E8" />
+      <SolidColorBrush x:Key="danger-on" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="info-100" Color="#0C5C8C" />
+      <SolidColorBrush x:Key="info-soft" Color="#E2F0F8" />
+      <SolidColorBrush x:Key="info-on" Color="#FFFFFF" />
+      <BoxShadows x:Key="shadow-sm">0 1 2 0 #14101828, 0 1 1 0 #0A101828</BoxShadows>
+      <BoxShadows x:Key="shadow-md">0 12 28 0 #29101828, 0 4 8 0 #14101828</BoxShadows>
+
+      <!-- Window and text -->
+      <StaticResource x:Key="SystemControlBackgroundAltHighBrush" ResourceKey="surface-100" />
+      <StaticResource x:Key="SystemControlForegroundBaseHighBrush" ResourceKey="ink-100" />
+      <StaticResource x:Key="TextFillColorPrimaryBrush" ResourceKey="ink-100" />
+      <!-- Keyboard focus: a 2px focus-ring outline -->
+      <StaticResource x:Key="SystemControlFocusVisualPrimaryBrush" ResourceKey="focus-ring" />
+      <SolidColorBrush x:Key="SystemControlFocusVisualSecondaryBrush" Color="Transparent" />
+      <!-- Button: the default (unclassed) button is the secondary variant -->
+      <StaticResource x:Key="ButtonBackground" ResourceKey="surface-200" />
+      <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="row-hover" />
+      <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="row-hover" />
+      <StaticResource x:Key="ButtonBackgroundDisabled" ResourceKey="surface-200" />
+      <StaticResource x:Key="ButtonForeground" ResourceKey="ink-100" />
+      <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="ink-100" />
+      <StaticResource x:Key="ButtonForegroundPressed" ResourceKey="ink-100" />
+      <StaticResource x:Key="ButtonForegroundDisabled" ResourceKey="ink-100" />
+      <StaticResource x:Key="ButtonBorderBrush" ResourceKey="border-100" />
+      <StaticResource x:Key="ButtonBorderBrushPointerOver" ResourceKey="border-100" />
+      <StaticResource x:Key="ButtonBorderBrushPressed" ResourceKey="border-200" />
+      <StaticResource x:Key="ButtonBorderBrushDisabled" ResourceKey="border-100" />
+      <!-- Tooltips: a popover surface -->
+      <StaticResource x:Key="ToolTipBackground" ResourceKey="surface-200" />
+      <StaticResource x:Key="ToolTipForeground" ResourceKey="ink-100" />
+      <StaticResource x:Key="ToolTipBorderBrush" ResourceKey="border-100" />
+      <!-- Text fields -->
+      <StaticResource x:Key="TextControlBackground" ResourceKey="surface-300" />
+      <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="surface-300" />
+      <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="surface-300" />
+      <StaticResource x:Key="TextControlBackgroundDisabled" ResourceKey="surface-300" />
+      <StaticResource x:Key="TextControlForeground" ResourceKey="ink-100" />
+      <StaticResource x:Key="TextControlForegroundPointerOver" ResourceKey="ink-100" />
+      <StaticResource x:Key="TextControlForegroundFocused" ResourceKey="ink-100" />
+      <StaticResource x:Key="TextControlForegroundDisabled" ResourceKey="ink-100" />
+      <StaticResource x:Key="TextControlBorderBrush" ResourceKey="border-100" />
+      <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="border-200" />
+      <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="border-200" />
+      <StaticResource x:Key="TextControlBorderBrushDisabled" ResourceKey="border-100" />
+      <StaticResource x:Key="TextControlPlaceholderForeground" ResourceKey="ink-300" />
+      <StaticResource x:Key="TextControlPlaceholderForegroundPointerOver" ResourceKey="ink-300" />
+      <StaticResource x:Key="TextControlPlaceholderForegroundFocused" ResourceKey="ink-300" />
+      <StaticResource x:Key="TextControlPlaceholderForegroundDisabled" ResourceKey="ink-300" />
+      <!-- Dropdowns -->
+      <StaticResource x:Key="ComboBoxBackground" ResourceKey="surface-300" />
+      <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="surface-300" />
+      <StaticResource x:Key="ComboBoxBackgroundPressed" ResourceKey="surface-300" />
+      <StaticResource x:Key="ComboBoxBackgroundDisabled" ResourceKey="surface-300" />
+      <StaticResource x:Key="ComboBoxBackgroundUnfocused" ResourceKey="surface-300" />
+      <StaticResource x:Key="ComboBoxBorderBrush" ResourceKey="border-100" />
+      <StaticResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="border-200" />
+      <StaticResource x:Key="ComboBoxBorderBrushPressed" ResourceKey="border-200" />
+      <StaticResource x:Key="ComboBoxBorderBrushDisabled" ResourceKey="border-100" />
+      <StaticResource x:Key="ComboBoxBackgroundBorderBrushFocused" ResourceKey="focus-ring" />
+      <StaticResource x:Key="ComboBoxBackgroundBorderBrushUnfocused" ResourceKey="border-200" />
+      <StaticResource x:Key="ComboBoxForeground" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxForegroundFocused" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxForegroundFocusedPressed" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxForegroundDisabled" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxPlaceHolderForeground" ResourceKey="ink-200" />
+      <StaticResource x:Key="ComboBoxPlaceHolderForegroundFocusedPressed" ResourceKey="ink-200" />
+      <StaticResource x:Key="ComboBoxDropDownGlyphForeground" ResourceKey="ink-200" />
+      <StaticResource x:Key="ComboBoxDropDownGlyphForegroundFocused" ResourceKey="ink-200" />
+      <StaticResource x:Key="ComboBoxDropDownGlyphForegroundFocusedPressed" ResourceKey="ink-200" />
+      <StaticResource x:Key="ComboBoxDropDownGlyphForegroundDisabled" ResourceKey="ink-200" />
+      <StaticResource x:Key="ComboBoxDropDownBackground" ResourceKey="surface-200" />
+      <StaticResource x:Key="ComboBoxDropDownBorderBrush" ResourceKey="border-100" />
+      <StaticResource x:Key="ComboBoxItemForeground" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxItemForegroundPointerOver" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxItemForegroundPressed" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxItemForegroundSelected" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxItemForegroundSelectedPointerOver" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxItemForegroundSelectedPressed" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxItemBackgroundPointerOver" ResourceKey="row-hover" />
+      <StaticResource x:Key="ComboBoxItemBackgroundPressed" ResourceKey="row-hover" />
+      <StaticResource x:Key="ComboBoxItemBackgroundSelected" ResourceKey="accent-soft" />
+      <StaticResource x:Key="ComboBoxItemBackgroundSelectedPointerOver" ResourceKey="accent-soft" />
+      <StaticResource x:Key="ComboBoxItemBackgroundSelectedPressed" ResourceKey="accent-soft" />
+      <!-- Tree rows: hover wash; the selected row is the destination highlight (wash plus edge) -->
+      <StaticResource x:Key="TreeViewItemForeground" ResourceKey="ink-100" />
+      <StaticResource x:Key="TreeViewItemForegroundPointerOver" ResourceKey="ink-100" />
+      <StaticResource x:Key="TreeViewItemForegroundPressed" ResourceKey="ink-100" />
+      <StaticResource x:Key="TreeViewItemForegroundSelected" ResourceKey="ink-100" />
+      <StaticResource x:Key="TreeViewItemForegroundSelectedPointerOver" ResourceKey="ink-100" />
+      <StaticResource x:Key="TreeViewItemForegroundSelectedPressed" ResourceKey="ink-100" />
+      <StaticResource x:Key="TreeViewItemForegroundDisabled" ResourceKey="ink-300" />
+      <StaticResource x:Key="TreeViewItemBackgroundPointerOver" ResourceKey="row-hover" />
+      <StaticResource x:Key="TreeViewItemBackgroundPressed" ResourceKey="row-hover" />
+      <StaticResource x:Key="TreeViewItemBackgroundSelected" ResourceKey="accent-soft" />
+      <StaticResource x:Key="TreeViewItemBackgroundSelectedPointerOver" ResourceKey="accent-soft" />
+      <StaticResource x:Key="TreeViewItemBackgroundSelectedPressed" ResourceKey="accent-soft" />
+      <StaticResource x:Key="TreeViewItemBorderBrushSelected" ResourceKey="accent-soft-border" />
+      <StaticResource x:Key="TreeViewItemBorderBrushSelectedPointerOver" ResourceKey="accent-soft-border" />
+      <StaticResource x:Key="TreeViewItemBorderBrushSelectedPressed" ResourceKey="accent-soft-border" />
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="surface-100" Color="#0F1319" />
+      <SolidColorBrush x:Key="surface-200" Color="#161B22" />
+      <SolidColorBrush x:Key="surface-300" Color="#1C222B" />
+      <SolidColorBrush x:Key="row-hover" Color="#1A2029" />
+      <SolidColorBrush x:Key="overlay-scrim" Color="#99000000" />
+      <SolidColorBrush x:Key="border-100" Color="#2C333D" />
+      <SolidColorBrush x:Key="border-200" Color="#66707D" />
+      <SolidColorBrush x:Key="ink-100" Color="#E7EDF4" />
+      <SolidColorBrush x:Key="ink-200" Color="#A0AAB8" />
+      <SolidColorBrush x:Key="ink-300" Color="#616B79" />
+      <SolidColorBrush x:Key="accent-100" Color="#7096F7" />
+      <SolidColorBrush x:Key="accent-100-hover" Color="#85A4F9" />
+      <SolidColorBrush x:Key="accent-100-pressed" Color="#5A7BDB" />
+      <SolidColorBrush x:Key="accent-100-on" Color="#0B1526" />
+      <SolidColorBrush x:Key="accent-soft" Color="#1D2740" />
+      <SolidColorBrush x:Key="accent-soft-border" Color="#35447A" />
+      <SolidColorBrush x:Key="focus-ring" Color="#7FA8FF" />
+      <SolidColorBrush x:Key="success-100" Color="#57D9C3" />
+      <SolidColorBrush x:Key="success-soft" Color="#113330" />
+      <SolidColorBrush x:Key="success-on" Color="#06322C" />
+      <SolidColorBrush x:Key="warning-100" Color="#F0B64C" />
+      <SolidColorBrush x:Key="warning-soft" Color="#3A2C10" />
+      <SolidColorBrush x:Key="warning-on" Color="#3A2504" />
+      <SolidColorBrush x:Key="danger-100" Color="#FF8570" />
+      <SolidColorBrush x:Key="danger-100-hover" Color="#FF9A87" />
+      <SolidColorBrush x:Key="danger-100-pressed" Color="#E06952" />
+      <SolidColorBrush x:Key="danger-soft" Color="#3A1815" />
+      <SolidColorBrush x:Key="danger-on" Color="#390D08" />
+      <SolidColorBrush x:Key="info-100" Color="#6CC2F0" />
+      <SolidColorBrush x:Key="info-soft" Color="#12283A" />
+      <SolidColorBrush x:Key="info-on" Color="#05202F" />
+      <BoxShadows x:Key="shadow-sm">0 1 2 0 #73000000</BoxShadows>
+      <BoxShadows x:Key="shadow-md">0 12 28 0 #8C000000, 0 4 10 0 #59000000</BoxShadows>
+
+      <!-- Window and text -->
+      <StaticResource x:Key="SystemControlBackgroundAltHighBrush" ResourceKey="surface-100" />
+      <StaticResource x:Key="SystemControlForegroundBaseHighBrush" ResourceKey="ink-100" />
+      <StaticResource x:Key="TextFillColorPrimaryBrush" ResourceKey="ink-100" />
+      <!-- Keyboard focus: a 2px focus-ring outline -->
+      <StaticResource x:Key="SystemControlFocusVisualPrimaryBrush" ResourceKey="focus-ring" />
+      <SolidColorBrush x:Key="SystemControlFocusVisualSecondaryBrush" Color="Transparent" />
+      <!-- Button: the default (unclassed) button is the secondary variant -->
+      <StaticResource x:Key="ButtonBackground" ResourceKey="surface-200" />
+      <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="row-hover" />
+      <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="row-hover" />
+      <StaticResource x:Key="ButtonBackgroundDisabled" ResourceKey="surface-200" />
+      <StaticResource x:Key="ButtonForeground" ResourceKey="ink-100" />
+      <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="ink-100" />
+      <StaticResource x:Key="ButtonForegroundPressed" ResourceKey="ink-100" />
+      <StaticResource x:Key="ButtonForegroundDisabled" ResourceKey="ink-100" />
+      <StaticResource x:Key="ButtonBorderBrush" ResourceKey="border-100" />
+      <StaticResource x:Key="ButtonBorderBrushPointerOver" ResourceKey="border-100" />
+      <StaticResource x:Key="ButtonBorderBrushPressed" ResourceKey="border-200" />
+      <StaticResource x:Key="ButtonBorderBrushDisabled" ResourceKey="border-100" />
+      <!-- Tooltips: a popover surface -->
+      <StaticResource x:Key="ToolTipBackground" ResourceKey="surface-200" />
+      <StaticResource x:Key="ToolTipForeground" ResourceKey="ink-100" />
+      <StaticResource x:Key="ToolTipBorderBrush" ResourceKey="border-100" />
+      <!-- Text fields -->
+      <StaticResource x:Key="TextControlBackground" ResourceKey="surface-300" />
+      <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="surface-300" />
+      <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="surface-300" />
+      <StaticResource x:Key="TextControlBackgroundDisabled" ResourceKey="surface-300" />
+      <StaticResource x:Key="TextControlForeground" ResourceKey="ink-100" />
+      <StaticResource x:Key="TextControlForegroundPointerOver" ResourceKey="ink-100" />
+      <StaticResource x:Key="TextControlForegroundFocused" ResourceKey="ink-100" />
+      <StaticResource x:Key="TextControlForegroundDisabled" ResourceKey="ink-100" />
+      <StaticResource x:Key="TextControlBorderBrush" ResourceKey="border-100" />
+      <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="border-200" />
+      <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="border-200" />
+      <StaticResource x:Key="TextControlBorderBrushDisabled" ResourceKey="border-100" />
+      <StaticResource x:Key="TextControlPlaceholderForeground" ResourceKey="ink-300" />
+      <StaticResource x:Key="TextControlPlaceholderForegroundPointerOver" ResourceKey="ink-300" />
+      <StaticResource x:Key="TextControlPlaceholderForegroundFocused" ResourceKey="ink-300" />
+      <StaticResource x:Key="TextControlPlaceholderForegroundDisabled" ResourceKey="ink-300" />
+      <!-- Dropdowns -->
+      <StaticResource x:Key="ComboBoxBackground" ResourceKey="surface-300" />
+      <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="surface-300" />
+      <StaticResource x:Key="ComboBoxBackgroundPressed" ResourceKey="surface-300" />
+      <StaticResource x:Key="ComboBoxBackgroundDisabled" ResourceKey="surface-300" />
+      <StaticResource x:Key="ComboBoxBackgroundUnfocused" ResourceKey="surface-300" />
+      <StaticResource x:Key="ComboBoxBorderBrush" ResourceKey="border-100" />
+      <StaticResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="border-200" />
+      <StaticResource x:Key="ComboBoxBorderBrushPressed" ResourceKey="border-200" />
+      <StaticResource x:Key="ComboBoxBorderBrushDisabled" ResourceKey="border-100" />
+      <StaticResource x:Key="ComboBoxBackgroundBorderBrushFocused" ResourceKey="focus-ring" />
+      <StaticResource x:Key="ComboBoxBackgroundBorderBrushUnfocused" ResourceKey="border-200" />
+      <StaticResource x:Key="ComboBoxForeground" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxForegroundFocused" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxForegroundFocusedPressed" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxForegroundDisabled" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxPlaceHolderForeground" ResourceKey="ink-200" />
+      <StaticResource x:Key="ComboBoxPlaceHolderForegroundFocusedPressed" ResourceKey="ink-200" />
+      <StaticResource x:Key="ComboBoxDropDownGlyphForeground" ResourceKey="ink-200" />
+      <StaticResource x:Key="ComboBoxDropDownGlyphForegroundFocused" ResourceKey="ink-200" />
+      <StaticResource x:Key="ComboBoxDropDownGlyphForegroundFocusedPressed" ResourceKey="ink-200" />
+      <StaticResource x:Key="ComboBoxDropDownGlyphForegroundDisabled" ResourceKey="ink-200" />
+      <StaticResource x:Key="ComboBoxDropDownBackground" ResourceKey="surface-200" />
+      <StaticResource x:Key="ComboBoxDropDownBorderBrush" ResourceKey="border-100" />
+      <StaticResource x:Key="ComboBoxItemForeground" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxItemForegroundPointerOver" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxItemForegroundPressed" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxItemForegroundSelected" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxItemForegroundSelectedPointerOver" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxItemForegroundSelectedPressed" ResourceKey="ink-100" />
+      <StaticResource x:Key="ComboBoxItemBackgroundPointerOver" ResourceKey="row-hover" />
+      <StaticResource x:Key="ComboBoxItemBackgroundPressed" ResourceKey="row-hover" />
+      <StaticResource x:Key="ComboBoxItemBackgroundSelected" ResourceKey="accent-soft" />
+      <StaticResource x:Key="ComboBoxItemBackgroundSelectedPointerOver" ResourceKey="accent-soft" />
+      <StaticResource x:Key="ComboBoxItemBackgroundSelectedPressed" ResourceKey="accent-soft" />
+      <!-- Tree rows: hover wash; the selected row is the destination highlight (wash plus edge) -->
+      <StaticResource x:Key="TreeViewItemForeground" ResourceKey="ink-100" />
+      <StaticResource x:Key="TreeViewItemForegroundPointerOver" ResourceKey="ink-100" />
+      <StaticResource x:Key="TreeViewItemForegroundPressed" ResourceKey="ink-100" />
+      <StaticResource x:Key="TreeViewItemForegroundSelected" ResourceKey="ink-100" />
+      <StaticResource x:Key="TreeViewItemForegroundSelectedPointerOver" ResourceKey="ink-100" />
+      <StaticResource x:Key="TreeViewItemForegroundSelectedPressed" ResourceKey="ink-100" />
+      <StaticResource x:Key="TreeViewItemForegroundDisabled" ResourceKey="ink-300" />
+      <StaticResource x:Key="TreeViewItemBackgroundPointerOver" ResourceKey="row-hover" />
+      <StaticResource x:Key="TreeViewItemBackgroundPressed" ResourceKey="row-hover" />
+      <StaticResource x:Key="TreeViewItemBackgroundSelected" ResourceKey="accent-soft" />
+      <StaticResource x:Key="TreeViewItemBackgroundSelectedPointerOver" ResourceKey="accent-soft" />
+      <StaticResource x:Key="TreeViewItemBackgroundSelectedPressed" ResourceKey="accent-soft" />
+      <StaticResource x:Key="TreeViewItemBorderBrushSelected" ResourceKey="accent-soft-border" />
+      <StaticResource x:Key="TreeViewItemBorderBrushSelectedPointerOver" ResourceKey="accent-soft-border" />
+      <StaticResource x:Key="TreeViewItemBorderBrushSelectedPressed" ResourceKey="accent-soft-border" />
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+
+  <!-- Radii -->
+  <CornerRadius x:Key="radius-sm">4</CornerRadius>
+  <CornerRadius x:Key="radius-md">6</CornerRadius>
+  <CornerRadius x:Key="radius-lg">10</CornerRadius>
+  <CornerRadius x:Key="radius-pill">999</CornerRadius>
+
+  <!-- Type: body (13px) is the default UI text size -->
+  <x:Double x:Key="ControlContentThemeFontSize">13</x:Double>
+
+  <!-- Control metrics -->
+  <CornerRadius x:Key="ControlCornerRadius">6</CornerRadius>
+  <CornerRadius x:Key="OverlayCornerRadius">6</CornerRadius>
+  <Thickness x:Key="ButtonPadding">12,0</Thickness>
+  <Thickness x:Key="ButtonBorderThemeThickness">1</Thickness>
+  <Thickness x:Key="TextControlThemePadding">8,5</Thickness>
+  <Thickness x:Key="TextControlBorderThemeThicknessFocused">1</Thickness>
+  <x:Double x:Key="TextControlThemeMinHeight">30</x:Double>
+  <Thickness x:Key="ComboBoxPadding">12,0,8,0</Thickness>
+  <x:Double x:Key="ComboBoxMinHeight">32</x:Double>
+  <Thickness x:Key="ComboBoxItemThemePadding">12,8</Thickness>
+  <x:Double x:Key="TreeViewItemMinHeight">30</x:Double>
+  <x:Double x:Key="TreeViewItemIndent">16</x:Double>
+  <Thickness x:Key="SystemControlFocusVisualPrimaryThickness">2</Thickness>
+  <Thickness x:Key="SystemControlFocusVisualSecondaryThickness">0</Thickness>
+  <Thickness x:Key="SystemControlFocusVisualMargin">-2</Thickness>
+</ResourceDictionary>

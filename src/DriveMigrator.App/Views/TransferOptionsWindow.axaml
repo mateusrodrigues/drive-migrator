@@ -1,106 +1,145 @@
+<!--
+  The last thing a person reads before a copy starts: a selectable summary of both ends and every service, the
+  reassurance that the source is untouched, then only the option sections that apply, in the summary's order.
+-->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:DriveMigrator.App.ViewModels"
+        xmlns:ctl="using:DriveMigrator.App.Controls"
         x:Class="DriveMigrator.App.Views.TransferOptionsWindow"
         x:DataType="vm:TransferOptionsViewModel"
-        Title="Copy options"
-        Width="560" SizeToContent="Height" MaxHeight="720"
+        Classes="dialog"
+        Title="Transfer options"
+        Width="640" SizeToContent="Height" MaxHeight="720"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
-  <Window.Styles>
-    <Style Selector="TextBlock.heading">
-      <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Margin" Value="0,8,0,2" />
-    </Style>
-    <Style Selector="TextBlock.muted">
-      <Setter Property="Opacity" Value="0.7" />
-      <Setter Property="TextWrapping" Value="Wrap" />
-      <Setter Property="FontSize" Value="12" />
-    </Style>
-  </Window.Styles>
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Classes="heading" Margin="20,20,20,0" Text="Transfer options" />
 
-  <DockPanel Margin="20">
-    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,16,0,0">
-      <Button Content="Cancel" IsCancel="True" Click="OnCancel" />
-      <Button Content="Start copying" Classes="accent" IsDefault="True" Click="OnStart" />
-    </StackPanel>
+    <!-- Pinned outside the scroll region so Start copying is always reachable. -->
+    <Border DockPanel.Dock="Bottom" Classes="dialog-footer">
+      <StackPanel>
+        <Button Classes="secondary" Content="Cancel" IsCancel="True" Click="OnCancel" />
+        <Button Classes="primary" Content="Start copying" IsDefault="True" Click="OnStart" />
+      </StackPanel>
+    </Border>
 
     <ScrollViewer>
-      <StackPanel Spacing="6">
-        <SelectableTextBlock Text="{Binding Summary}" TextWrapping="Wrap" />
-        <TextBlock Classes="muted" Text="Nothing is deleted or changed in the source account." />
-
-        <StackPanel IsVisible="{Binding HasFiles}" Spacing="6">
-          <TextBlock Classes="heading" Text="If a file with the same name already exists" />
-          <RadioButton GroupName="conflicts" IsChecked="{Binding ConflictSkip}" Content="Skip it (keep the existing file)" />
-          <RadioButton GroupName="conflicts" IsChecked="{Binding ConflictOverwrite}" Content="Overwrite the existing file" />
-          <RadioButton GroupName="conflicts" IsChecked="{Binding ConflictKeepBoth}" Content="Keep both (copy as &quot;name (1)&quot;)" />
-          <TextBlock Classes="muted" Text="Folders with the same name are always merged." />
-        </StackPanel>
-
-        <StackPanel IsVisible="{Binding ShowDuplicateOption}" Spacing="6">
-          <TextBlock Classes="heading" Text="Already copied" />
-          <CheckBox IsChecked="{Binding SkipDuplicates}">
-            <TextBlock TextWrapping="Wrap" Text="{Binding DuplicateOptionLabel}" />
-          </CheckBox>
-        </StackPanel>
-
-        <StackPanel IsVisible="{Binding HasCalendar}" Spacing="6">
-          <TextBlock Classes="heading" Text="Calendar" />
-          <StackPanel IsVisible="{Binding AskAboutAttendees}" Spacing="6">
-            <TextBlock TextWrapping="Wrap" Text="Events with attendees: Outlook sends an invitation to every attendee of an event it creates." />
-            <RadioButton GroupName="attendees" IsChecked="{Binding EmbedAttendees}">
-              <TextBlock TextWrapping="Wrap" Text="List the organizer and attendees in the event description (nobody is notified)" />
-            </RadioButton>
-            <RadioButton GroupName="attendees" IsChecked="{Binding KeepAttendees}">
-              <TextBlock TextWrapping="Wrap" Text="Keep them as real attendees (Outlook will email them invitations)" />
-            </RadioButton>
+      <StackPanel Margin="20,16" Spacing="16">
+        <Border Padding="16,12" CornerRadius="{StaticResource radius-md}" BorderThickness="1"
+                Background="{DynamicResource surface-300}" BorderBrush="{DynamicResource border-100}">
+          <StackPanel Spacing="8">
+            <SelectableTextBlock Classes="body-strong" TextWrapping="Wrap" Text="{Binding SummaryTitle}" />
+            <SelectableTextBlock Classes="body-sm" TextWrapping="Wrap" Text="{Binding SummaryDetails}"
+                                 IsVisible="{Binding SummaryDetails, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           </StackPanel>
-          <TextBlock Classes="muted" IsVisible="{Binding AttendeesKeptSilently}"
-                     Text="Attendees are kept; Google doesn't notify them when events are imported." />
-          <TextBlock Classes="muted"
-                     Text="Recurring events keep their pattern; deleted occurrences stay deleted and changed occurrences are copied as separate events. The main calendars map to each other; other calendars are recreated. Event attachments and online meeting links are not copied." />
-        </StackPanel>
+        </Border>
+        <TextBlock Classes="body-sm muted" Text="Nothing is deleted or changed in the source account." />
 
-        <StackPanel IsVisible="{Binding HasContacts}" Spacing="6">
-          <TextBlock Classes="heading" Text="Contacts" />
-          <TextBlock Classes="muted"
-                     Text="Google &quot;All contacts&quot; and Outlook &quot;Contacts&quot; map to each other; Google groups become Outlook contact folders and the other way round. Details Outlook has no place for (a fourth email, extra addresses or websites) are added to the contact's notes. Photos are not copied." />
-        </StackPanel>
+        <StackPanel Name="Sections" Spacing="20">
+          <Border Classes="section" IsVisible="{Binding HasFiles}">
+            <StackPanel Classes="section">
+              <TextBlock Classes="heading-sm" Text="If a file with the same name already exists" />
+              <StackPanel Spacing="12">
+                <RadioButton GroupName="conflicts" IsChecked="{Binding ConflictSkip}" Content="Skip it (keep the existing file)" />
+                <RadioButton GroupName="conflicts" IsChecked="{Binding ConflictOverwrite}" Content="Overwrite the existing file" />
+                <RadioButton GroupName="conflicts" IsChecked="{Binding ConflictKeepBoth}" Content="Keep both (copy as &quot;name (1)&quot;)" />
+              </StackPanel>
+              <TextBlock Classes="body-sm muted" TextWrapping="Wrap" Text="Folders with the same name are always merged." />
+            </StackPanel>
+          </Border>
 
-        <StackPanel IsVisible="{Binding HasMail}" Spacing="6">
-          <TextBlock Classes="heading" Text="Mail" />
-          <TextBlock Classes="muted"
-                     Text="Messages keep their dates and read and flagged state. Inbox, Sent, Junk/Spam, Deleted/Trash and Archive/All Mail copied to the top level go into their counterparts; other folders and labels are recreated. Folders with the same name are merged." />
-        </StackPanel>
+          <Border Classes="section" IsVisible="{Binding HasNativeDocuments}">
+            <StackPanel Classes="section">
+              <TextBlock Classes="heading-sm" Text="Google documents" />
+              <ItemsControl ItemsSource="{Binding NativeDocuments}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Spacing="12" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:NativeDocumentChoiceViewModel">
+                    <Grid ColumnDefinitions="*,220" ColumnSpacing="16">
+                      <TextBlock VerticalAlignment="Center">
+                        <Run Text="{Binding Label}" /><Run Text=" →" />
+                      </TextBlock>
+                      <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected}">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate x:DataType="vm:ExportChoice">
+                            <TextBlock Text="{Binding Label}" />
+                          </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <TextBlock Classes="body-sm muted" TextWrapping="Wrap"
+                         Text="Google Docs, Sheets, Slides and Drawings have no file of their own; choose what to save them as." />
+            </StackPanel>
+          </Border>
 
-        <StackPanel IsVisible="{Binding HasNativeDocuments}" Spacing="6">
-          <TextBlock Classes="heading" Text="Google documents" />
-          <TextBlock Classes="muted" Text="Google Docs, Sheets, Slides and Drawings have no file of their own; choose what to save them as." />
-          <ItemsControl ItemsSource="{Binding NativeDocuments}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="vm:NativeDocumentChoiceViewModel">
-                <Grid ColumnDefinitions="160,*" Margin="0,2">
-                  <TextBlock VerticalAlignment="Center" Text="{Binding Label}" />
-                  <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected}">
-                    <ComboBox.ItemTemplate>
-                      <DataTemplate x:DataType="vm:ExportChoice">
-                        <TextBlock Text="{Binding Label}" />
-                      </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                  </ComboBox>
-                </Grid>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-        </StackPanel>
+          <Border Classes="section" IsVisible="{Binding CanConvert}">
+            <StackPanel Classes="section">
+              <TextBlock Classes="heading-sm" Text="Conversion" />
+              <CheckBox IsChecked="{Binding ConvertToNativeFormat}">
+                <TextBlock TextWrapping="Wrap" Text="{Binding ConvertLabel}" />
+              </CheckBox>
+            </StackPanel>
+          </Border>
 
-        <StackPanel IsVisible="{Binding CanConvert}" Spacing="6">
-          <TextBlock Classes="heading" Text="Conversion" />
-          <CheckBox IsChecked="{Binding ConvertToNativeFormat}">
-            <TextBlock TextWrapping="Wrap" Text="{Binding ConvertLabel}" />
-          </CheckBox>
+          <Border Classes="section" IsVisible="{Binding HasMail}">
+            <StackPanel Classes="section">
+              <TextBlock Classes="heading-sm" Text="Mail" />
+              <TextBlock Classes="body-sm muted" TextWrapping="Wrap"
+                         Text="Messages keep their dates and read and flagged state. Inbox, Sent, Junk/Spam, Deleted/Trash and Archive/All Mail copied to the top level go into their counterparts; other folders and labels are recreated. Folders with the same name are merged." />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="section" IsVisible="{Binding HasCalendar}">
+            <StackPanel Classes="section">
+              <TextBlock Classes="heading-sm" Text="Calendar" />
+              <StackPanel Spacing="12" IsVisible="{Binding AskAboutAttendees}">
+                <TextBlock Classes="body-sm muted" TextWrapping="Wrap"
+                           Text="Events with attendees: Outlook sends an invitation to every attendee of an event it creates." />
+                <RadioButton GroupName="attendees" IsChecked="{Binding EmbedAttendees}">
+                  <TextBlock TextWrapping="Wrap" Text="List the organizer and attendees in the event description (nobody is notified)" />
+                </RadioButton>
+                <RadioButton GroupName="attendees" IsChecked="{Binding KeepAttendees}">
+                  <StackPanel Spacing="2">
+                    <TextBlock TextWrapping="Wrap" Text="Keep them as real attendees" />
+                    <DockPanel>
+                      <ctl:Icon Classes="warning" Kind="Warning" Width="12" Height="12" Margin="0,2,4,0" VerticalAlignment="Top" />
+                      <TextBlock Classes="body-sm warning" TextWrapping="Wrap" Text="Outlook will email an invitation to every attendee." />
+                    </DockPanel>
+                  </StackPanel>
+                </RadioButton>
+              </StackPanel>
+              <TextBlock Classes="body-sm muted" TextWrapping="Wrap" IsVisible="{Binding AttendeesKeptSilently}"
+                         Text="Attendees are kept; Google doesn't notify them when events are imported." />
+              <TextBlock Classes="body-sm muted" TextWrapping="Wrap"
+                         Text="Recurring events keep their pattern; deleted occurrences stay deleted and changed occurrences are copied as separate events. The main calendars map to each other; other calendars are recreated. Event attachments and online meeting links are not copied." />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="section" IsVisible="{Binding HasContacts}">
+            <StackPanel Classes="section">
+              <TextBlock Classes="heading-sm" Text="Contacts" />
+              <TextBlock Classes="body-sm muted" TextWrapping="Wrap"
+                         Text="Google &quot;All contacts&quot; and Outlook &quot;Contacts&quot; map to each other; Google groups become Outlook contact folders and the other way round. Details Outlook has no place for (a fourth email, extra addresses or websites) are added to the contact's notes. Photos are not copied." />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="section" IsVisible="{Binding ShowDuplicateOption}">
+            <StackPanel Classes="section">
+              <TextBlock Classes="heading-sm" Text="Already copied" />
+              <CheckBox IsChecked="{Binding SkipDuplicates}">
+                <TextBlock TextWrapping="Wrap" Text="{Binding DuplicateOptionLabel}" />
+              </CheckBox>
+            </StackPanel>
+          </Border>
         </StackPanel>
       </StackPanel>
     </ScrollViewer>

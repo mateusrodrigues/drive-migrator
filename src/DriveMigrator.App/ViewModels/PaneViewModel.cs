@@ -37,6 +37,9 @@ public sealed partial class PaneViewModel(string name) : ViewModelBase, IDisposa
 
     public bool HasAnyAccounts => Accounts.Count > 0;
 
+    /// <summary>The account picker's text while nothing is chosen.</summary>
+    public string AccountPlaceholder => HasAnyAccounts ? "Choose an account" : "No accounts connected";
+
     public IAccountSession? Session => SelectedAccount?.Account.Session;
 
     /// <summary>Where items copied into this pane will go, as shown under the tree.</summary>
@@ -70,6 +73,7 @@ public sealed partial class PaneViewModel(string name) : ViewModelBase, IDisposa
         }
 
         OnPropertyChanged(nameof(HasAnyAccounts));
+        OnPropertyChanged(nameof(AccountPlaceholder));
         if (previous is not null && !Accounts.Contains(previous))
         {
             SelectedAccount = Accounts.FirstOrDefault(a => a.Info == previous.Info);
