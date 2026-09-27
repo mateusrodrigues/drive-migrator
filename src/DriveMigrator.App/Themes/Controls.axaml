@@ -9,6 +9,8 @@
 
   <!-- Windows: surface-100 for the main window; dialogs and Settings are raised surface-200. -->
   <Style Selector="Window">
+    <!-- The app icon (design/DriveMigrator.ico, generated from design/icon-source.svg). -->
+    <Setter Property="Icon" Value="/Assets/DriveMigrator.ico" />
     <Setter Property="Background" Value="{DynamicResource surface-100}" />
     <Setter Property="Foreground" Value="{DynamicResource ink-100}" />
   </Style>

@@ -178,6 +178,7 @@ public sealed class WindowRenderingTests : IDisposable
         await vm.InitializeAsync();
 
         Assert.Equal("No accounts connected", vm.Left.AccountPlaceholder);
+        Assert.NotNull(window.Icon);
         Capture(window, "main-empty");
         window.Close();
     }
