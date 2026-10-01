@@ -14,7 +14,13 @@ internal sealed record DriveItem(
 
 internal sealed record FolderFacet(int? ChildCount);
 
-internal sealed record FileFacet(string? MimeType);
+internal sealed record FileFacet(string? MimeType, HashesFacet? Hashes);
+
+/// <summary>
+/// Content hashes. QuickXorHash is reported everywhere; SHA-1 and SHA-256 (uppercase hex) only by some account
+/// types. Any of them can be missing right after an upload.
+/// </summary>
+internal sealed record HashesFacet(string? QuickXorHash, string? Sha1Hash, string? Sha256Hash);
 
 internal sealed record PackageFacet(string? Type);
 

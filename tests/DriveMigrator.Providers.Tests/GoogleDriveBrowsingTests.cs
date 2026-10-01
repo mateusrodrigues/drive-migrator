@@ -1,5 +1,6 @@
 using System.Web;
 using DriveMigrator.Core;
+using DriveMigrator.Core.Drive;
 using DriveMigrator.Providers.Google.Drive;
 using Google.Apis.Drive.v3;
 using Google.Apis.Http;
@@ -55,6 +56,32 @@ public class GoogleDriveBrowsingTests
         var first = HttpUtility.ParseQueryString(handler.Requests[0].RequestUri!.Query);
         Assert.Equal("'root' in parents and trashed = false", first["q"]);
         Assert.Equal("p2", HttpUtility.ParseQueryString(handler.Requests[1].RequestUri!.Query)["pageToken"]);
+    }
+
+    [Fact]
+    public async Task Listing_RequestsAndMapsChecksums()
+    {
+        var handler = new FakeHttpHandler(_ => FakeHttpHandler.Json("""
+            {
+              "files": [
+                { "id": "b1", "name": "scan.pdf", "mimeType": "application/pdf", "size": "3",
+                  "md5Checksum": "900150983CD24FB0D6963F7D28E17F72", "sha1Checksum": "a9993e364706816aba3e25717850c26c9cd0d89d",
+                  "sha256Checksum": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad" },
+                { "id": "d1", "name": "Budget", "mimeType": "application/vnd.google-apps.spreadsheet" }
+              ]
+            }
+            """));
+
+        var nodes = await CreateCapability(handler).GetChildrenAsync(null, Ct).ToListAsync(Ct);
+
+        Assert.Equal(
+            new FileHashes("900150983cd24fb0d6963f7d28e17f72", "a9993e364706816aba3e25717850c26c9cd0d89d", "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"),
+            nodes[0].Hashes);
+        Assert.Null(nodes[1].Hashes);
+        var fields = HttpUtility.ParseQueryString(Assert.Single(handler.Requests).RequestUri!.Query)["fields"]!;
+        Assert.Contains("md5Checksum", fields, StringComparison.Ordinal);
+        Assert.Contains("sha1Checksum", fields, StringComparison.Ordinal);
+        Assert.Contains("sha256Checksum", fields, StringComparison.Ordinal);
     }
 
     [Fact]

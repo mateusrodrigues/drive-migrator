@@ -42,7 +42,7 @@ public sealed class TransferStoreTests : IDisposable
     }
 
     [Fact]
-    public void OlderDatabaseWithoutDetailsColumn_IsUpgraded()
+    public void OlderDatabaseWithoutNewColumns_IsUpgraded()
     {
         var path = Path.Combine(Path.GetDirectoryName(_f.StorePath)!, "old.db");
         using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={path};Pooling=False"))
@@ -58,7 +58,8 @@ public sealed class TransferStoreTests : IDisposable
         var item = Assert.Single(store.LoadPendingItems(job.Id));
         store.MarkFinished(item.Id, ItemStatus.Failed, error: "e", details: "full");
 
-        Assert.Equal("full", Assert.Single(store.LoadItems(job.Id, ItemStatus.Failed)).Details);
+        var failed = Assert.Single(store.LoadItems(job.Id, ItemStatus.Failed));
+        Assert.Equal(("full", FailureKind.Error, (ConflictPolicy?)null), (failed.Details, failed.Failure, failed.Resolution));
     }
 
     [Fact]

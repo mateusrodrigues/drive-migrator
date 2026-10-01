@@ -1,5 +1,6 @@
 using System.Net;
 using DriveMigrator.Core;
+using DriveMigrator.Core.Drive;
 using DriveMigrator.Providers.Microsoft.Drive;
 using DriveMigrator.Providers.Microsoft.Graph;
 
@@ -80,6 +81,48 @@ public class OneDriveBrowsingTests
         var node = OneDriveCapability.ToNode(item)!;
 
         Assert.Equal(("drives/otherDrive/items/R1", NodeKind.Folder), (node.Id, node.Kind));
+    }
+
+    [Fact]
+    public async Task Listing_MapsWhicheverHashesTheAccountReports()
+    {
+        var handler = new FakeHttpHandler(_ => FakeHttpHandler.Json("""
+            {
+              "value": [
+                { "id": "P1", "name": "personal.bin", "parentReference": { "driveId": "d1" },
+                  "file": { "mimeType": "application/octet-stream", "hashes": {
+                    "sha1Hash": "A9993E364706816ABA3E25717850C26C9CD0D89D",
+                    "sha256Hash": "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD",
+                    "crc32Hash": "C2412435", "quickXorHash": "YgMAAAAAAAAAAAAAAwAAAAAAAAA=" } } },
+                { "id": "B1", "name": "business.bin", "parentReference": { "driveId": "d1" },
+                  "file": { "mimeType": "application/octet-stream", "hashes": { "quickXorHash": "YgMAAAAAAAAAAAAAAwAAAAAAAAA=" } } },
+                { "id": "N1", "name": "new.bin", "parentReference": { "driveId": "d1" }, "file": { "mimeType": "application/octet-stream" } },
+                { "id": "F1", "name": "Folder", "parentReference": { "driveId": "d1" }, "folder": { "childCount": 0 } }
+              ]
+            }
+            """));
+
+        var nodes = await CreateCapability(handler).GetChildrenAsync(null, Ct).ToListAsync(Ct);
+
+        Assert.Equal(
+            new FileHashes(
+                Sha1: "a9993e364706816aba3e25717850c26c9cd0d89d",
+                Sha256: "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+                QuickXor: "YgMAAAAAAAAAAAAAAwAAAAAAAAA="),
+            nodes[0].Hashes);
+        Assert.Equal(new FileHashes(QuickXor: "YgMAAAAAAAAAAAAAAwAAAAAAAAA="), nodes[1].Hashes);
+        Assert.Null(nodes[2].Hashes);
+        Assert.Null(nodes[3].Hashes);
+    }
+
+    [Fact]
+    public void RemoteItem_TakesTheSharedFilesHashes()
+    {
+        var item = new DriveItem("local", "shared.bin", null, null, null, null, null,
+            new RemoteItemFacet("R1", 3, null, new FileFacet("application/octet-stream", new HashesFacet("YgMAAAAAAAAAAAAAAwAAAAAAAAA=", null, null)), new ItemReference("otherDrive", null)),
+            new ItemReference("d1", null));
+
+        Assert.Equal(new FileHashes(QuickXor: "YgMAAAAAAAAAAAAAAwAAAAAAAAA="), OneDriveCapability.ToNode(item)!.Hashes);
     }
 
     [Fact]

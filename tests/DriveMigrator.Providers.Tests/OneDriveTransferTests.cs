@@ -63,12 +63,13 @@ public class OneDriveTransferTests
     {
         var handler = new FakeHttpHandler(r => r.Method == HttpMethod.Put
             ? FakeHttpHandler.Json("""{ "id": "U1", "name": "a?b.txt", "size": 3, "file": {}, "parentReference": { "driveId": "d1" } }""", HttpStatusCode.Created)
-            : FakeHttpHandler.Json("""{ "id": "U1", "name": "a?b.txt", "size": 3, "file": {}, "lastModifiedDateTime": "2024-05-06T07:08:09Z", "parentReference": { "driveId": "d1" } }"""));
+            : FakeHttpHandler.Json("""{ "id": "U1", "name": "a?b.txt", "size": 3, "file": { "hashes": { "quickXorHash": "eAAAAAAAAAAAAAAAAwAAAAAAAAA=" } }, "lastModifiedDateTime": "2024-05-06T07:08:09Z", "parentReference": { "driveId": "d1" } }"""));
 
         var uploaded = await Create(handler).UploadAsync(Docs, Content([7, 8, 9], "a?b.txt"), DriveUploadOptions.Default, cancellationToken: Ct);
 
         Assert.Equal("drives/d1/items/U1", uploaded.Id);
         Assert.Equal(Modified, uploaded.ModifiedAt);
+        Assert.Equal("eAAAAAAAAAAAAAAAAwAAAAAAAAA=", uploaded.Hashes?.QuickXor);
         Assert.Collection(
             handler.Requests,
             put =>

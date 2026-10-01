@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
+using Avalonia.VisualTree;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using DriveMigrator.App.ViewModels;
@@ -164,6 +165,56 @@ public sealed class WindowRenderingTests : IDisposable
 
         Application.Current!.RequestedThemeVariant = ThemeVariant.Dark;
         Capture(window, "main-transfers-dark");
+        Application.Current.RequestedThemeVariant = ThemeVariant.Default;
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task MainWindow_RendersChecksumProblems()
+    {
+        var source = _google.AddAccount("ada@gmail.com");
+        source.Drive.DisplayName = "Google Drive";
+        source.Drive.AddFile(null, "holiday.mov", new byte[3_000_000]);
+        source.Drive.AddFile(null, "thesis.pdf", new byte[800_000]);
+        source.Drive.AddFile(null, "budget.xlsx", new byte[20_000]);
+        var target = _microsoft.AddAccount("ada@outlook.com");
+        target.Drive.DisplayName = "OneDrive";
+        target.Drive.AddFile(null, "budget.xlsx", new byte[19_000]);
+        _accountStore.Accounts = [source.Account, target.Account];
+
+        using var transfers = new TempTransfers(_accounts);
+        using var vm = new MainWindowViewModel(_accounts, new ProviderRegistry([_google, _microsoft]), new FakeDialogService(), transfers.Manager);
+        var window = new MainWindow { DataContext = vm };
+        window.Show();
+        await vm.InitializeAsync();
+
+        // The large file is damaged on the way; budget.xlsx differs from the one already in OneDrive.
+        target.Drive.CorruptUpload = bytes => bytes.Length > 1_000_000 ? [.. bytes, 0] : bytes;
+        var request = new Core.Transfers.TransferRequest(source, target, [new(CapabilityKind.Drive, null)], [new(CapabilityKind.Drive, null)])
+        {
+            Options = new Core.Transfers.TransferOptions { CompareExisting = true },
+        };
+        var job = transfers.Manager.Start(request, "Google Drive → OneDrive");
+        while (job.Status == Engine.JobStatus.Running)
+        {
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+        }
+
+        vm.Transfers.Sync();
+        vm.Transfers.Jobs[0].Refresh();
+        Assert.True(vm.Transfers.Jobs[0].ShowMismatches);
+        Assert.True(vm.Transfers.Jobs[0].ShowDifferences);
+        Capture(window, "main-transfers-checksums");
+
+        // The files that differ, with their choices, further down the transfers panel.
+        var list = window.GetVisualDescendants().OfType<ScrollViewer>().Single(v => v.Content is ItemsControl { ItemsSource: IEnumerable<TransferJobViewModel> });
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        list.ScrollToEnd();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Capture(window, "main-transfers-differences");
+
+        Application.Current!.RequestedThemeVariant = ThemeVariant.Dark;
+        Capture(window, "main-transfers-differences-dark");
         Application.Current.RequestedThemeVariant = ThemeVariant.Default;
         window.Close();
     }

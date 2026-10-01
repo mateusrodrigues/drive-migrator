@@ -110,6 +110,17 @@ public abstract class InMemoryCapability(CapabilityKind kind, NodeKind container
         }
     }
 
+    /// <summary>Deletes a node (not its children), e.g. to simulate the user removing a file between runs.</summary>
+    public void Remove(MigrationNode node)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        lock (_gate)
+        {
+            GetEntry(node);
+            _entries.Remove(node.Id);
+        }
+    }
+
     protected TPayload GetPayload<TPayload>(MigrationNode node)
     {
         lock (_gate)

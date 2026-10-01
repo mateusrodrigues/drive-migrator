@@ -1,3 +1,5 @@
+using DriveMigrator.Core.Drive;
+
 namespace DriveMigrator.Core;
 
 /// <summary>
@@ -15,6 +17,9 @@ public sealed record MigrationNode(string Id, string Name, NodeKind Kind)
     public DateTimeOffset? ModifiedAt { get; init; }
 
     public string? MimeType { get; init; }
+
+    /// <summary>Content checksums the provider reports for a file; null for containers and native documents.</summary>
+    public FileHashes? Hashes { get; init; }
 
     /// <summary>
     /// Formats this item can be exported to. Non-empty for provider-native documents

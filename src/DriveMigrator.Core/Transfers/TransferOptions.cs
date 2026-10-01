@@ -20,6 +20,19 @@ public sealed record TransferOptions
     public bool ConvertToNativeFormat { get; init; }
 
     /// <summary>
+    /// Check each copied file against the checksums the source and destination report; a difference fails the file.
+    /// Files without a comparable checksum (native documents, conversions) are copied unchecked.
+    /// </summary>
+    public bool VerifyHashes { get; init; } = true;
+
+    /// <summary>
+    /// With <see cref="ConflictPolicy.Skip"/>, compare the checksums of a file that already exists in the destination
+    /// with the source instead of just skipping it: identical files are skipped, different ones fail so the user can
+    /// choose what to do with them.
+    /// </summary>
+    public bool CompareExisting { get; init; }
+
+    /// <summary>
     /// Skip messages whose Message-ID is already in the destination folder, and contacts matching an existing one
     /// (same email, or same name when there is no email), so re-running a copy adds no duplicates.
     /// </summary>

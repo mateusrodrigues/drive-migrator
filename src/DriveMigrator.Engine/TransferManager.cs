@@ -103,7 +103,7 @@ public sealed class TransferManager(TransferStore store, AccountManager accounts
         Run(job, source, destination);
     }
 
-    /// <summary>Marks failed items as pending again and resumes the job.</summary>
+    /// <summary>Marks items that failed with an ordinary error as pending again and resumes the job.</summary>
     public void RetryFailed(TransferJob job)
     {
         ArgumentNullException.ThrowIfNull(job);
@@ -115,6 +115,43 @@ public sealed class TransferManager(TransferStore store, AccountManager accounts
         store.ResetFailed(job.Id);
         job.SetCounts(store.GetCounts(job.Id));
         Resume(job);
+    }
+
+    /// <summary>
+    /// Copies the files that failed with <paramref name="kind"/> (a checksum mismatch) again using
+    /// <paramref name="resolution"/>, then resumes the job. <see cref="ConflictPolicy.Overwrite"/> replaces the
+    /// destination file each was compared with.
+    /// </summary>
+    public void RetryMismatched(TransferJob job, FailureKind kind, ConflictPolicy resolution)
+    {
+        ArgumentNullException.ThrowIfNull(job);
+        if (job.Status == JobStatus.Running)
+        {
+            return;
+        }
+
+        store.ResetMismatched(job.Id, kind, resolution);
+        job.SetCounts(store.GetCounts(job.Id));
+        Resume(job);
+    }
+
+    /// <summary>Leaves the destination's version of the files that failed with <paramref name="kind"/>; they count as skipped.</summary>
+    public void KeepDestinationVersions(TransferJob job, FailureKind kind)
+    {
+        ArgumentNullException.ThrowIfNull(job);
+        if (job.Status == JobStatus.Running)
+        {
+            return;
+        }
+
+        store.SkipMismatched(job.Id, kind, "Skipped: kept the different file that was already in the destination.");
+        var counts = store.GetCounts(job.Id);
+        job.SetCounts(counts);
+        var status = job.Status is JobStatus.Completed or JobStatus.CompletedWithErrors
+            ? counts.Failed > 0 ? JobStatus.CompletedWithErrors : JobStatus.Completed
+            : job.Status;
+        store.SetJobStatus(job.Id, status);
+        job.SetStatus(status, job.Problem);
     }
 
     /// <summary>Forgets a job (stopping it first). Copied data stays where it is.</summary>

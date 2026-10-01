@@ -157,6 +157,28 @@ public class GoogleDriveTransferTests
         Assert.Equal("root", metadata.RootElement.GetProperty("parents")[0].GetString());
     }
 
+    [Fact]
+    public async Task Upload_ReturnsTheStoredFilesChecksums()
+    {
+        var handler = new FakeHttpHandler(r =>
+        {
+            if (r.Method == HttpMethod.Post)
+            {
+                var start = new HttpResponseMessage(HttpStatusCode.OK);
+                start.Headers.Location = new Uri("https://upload.example/resume3");
+                return start;
+            }
+
+            return FakeHttpHandler.Json("""{ "id": "u3", "name": "a.bin", "mimeType": "application/octet-stream", "md5Checksum": "55a54008ad1ba589aa210d2629c1df41" }""");
+        });
+        var content = new DriveFileContent(new MemoryStream([1]), "a.bin", "application/octet-stream") { Length = 1 };
+
+        var uploaded = await Create(handler).UploadAsync(null, content, DriveUploadOptions.Default, cancellationToken: Ct);
+
+        Assert.Equal(new FileHashes(Md5: "55a54008ad1ba589aa210d2629c1df41"), uploaded.Hashes);
+        Assert.Contains("sha256Checksum", Uri.UnescapeDataString(handler.Requests[0].Url), StringComparison.Ordinal);
+    }
+
     private static async Task<byte[]> ReadAllAsync(DriveFileContent content)
     {
         using var copy = new MemoryStream();

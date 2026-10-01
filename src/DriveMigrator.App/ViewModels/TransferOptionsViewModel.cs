@@ -105,7 +105,7 @@ public sealed partial class TransferOptionsViewModel : ViewModelBase
     public partial bool SkipDuplicates { get; set; } = true;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ConflictSkip), nameof(ConflictOverwrite), nameof(ConflictKeepBoth))]
+    [NotifyPropertyChangedFor(nameof(ConflictSkip), nameof(ConflictOverwrite), nameof(ConflictKeepBoth), nameof(CanCompareExisting))]
     public partial ConflictPolicy Conflicts { get; set; } = ConflictPolicy.Skip;
 
     // One property per radio button; checking one selects its policy.
@@ -127,6 +127,15 @@ public sealed partial class TransferOptionsViewModel : ViewModelBase
         set => Select(value, ConflictPolicy.KeepBoth);
     }
 
+    [ObservableProperty]
+    public partial bool VerifyHashes { get; set; } = true;
+
+    /// <summary>Existing files are only compared when they are left alone; the other policies replace or keep both anyway.</summary>
+    public bool CanCompareExisting => Conflicts == ConflictPolicy.Skip;
+
+    [ObservableProperty]
+    public partial bool CompareExisting { get; set; }
+
     public ObservableCollection<NativeDocumentChoiceViewModel> NativeDocuments { get; } = [];
 
     public bool HasNativeDocuments => NativeDocuments.Count > 0;
@@ -144,6 +153,8 @@ public sealed partial class TransferOptionsViewModel : ViewModelBase
         NativeExports = NativeDocuments.ToDictionary(d => d.Type.MimeType, d => d.Selected.Format),
         ConvertToNativeFormat = CanConvert && ConvertToNativeFormat,
         SkipDuplicates = SkipDuplicates,
+        VerifyHashes = HasFiles && VerifyHashes,
+        CompareExisting = HasFiles && CanCompareExisting && CompareExisting,
         Calendar = new CalendarImportOptions(EmbedAttendees ? AttendeeHandling.EmbedInDescription : AttendeeHandling.KeepAttendees),
     };
 

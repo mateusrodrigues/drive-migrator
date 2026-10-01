@@ -18,7 +18,7 @@ internal sealed class GoogleDriveCapability : IDriveCapability
     internal const int ChunkSize = 40 * 256 * 1024;
 
     private const string GoogleAppsPrefix = "application/vnd.google-apps.";
-    private const string FileFields = "id, name, mimeType, size, modifiedTime";
+    private const string FileFields = "id, name, mimeType, size, modifiedTime, md5Checksum, sha1Checksum, sha256Checksum";
 
     /// <summary>Upload MIME types Google can convert, and the native type they become.</summary>
     internal static readonly IReadOnlyDictionary<string, string> ConvertibleTypes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -99,7 +99,7 @@ internal sealed class GoogleDriveCapability : IDriveCapability
     {
         var request = _drive.Files.List();
         request.Q = $"'{parent?.Id ?? "root"}' in parents and trashed = false";
-        request.Fields = "nextPageToken, files(id, name, mimeType, size, modifiedTime)";
+        request.Fields = $"nextPageToken, files({FileFields})";
         request.PageSize = 1000;
         request.Spaces = "drive";
         request.SupportsAllDrives = true;
@@ -259,7 +259,18 @@ internal sealed class GoogleDriveCapability : IDriveCapability
             ModifiedAt = file.ModifiedTimeDateTimeOffset,
             MimeType = file.MimeType,
             ExportFormats = exports,
+            Hashes = HashesOf(file),
         };
+    }
+
+    /// <summary>Drive reports checksums for binary files only; native documents have none.</summary>
+    private static FileHashes? HashesOf(GoogleFile file)
+    {
+        var hashes = new FileHashes(
+            Md5: file.Md5Checksum?.ToLowerInvariant(),
+            Sha1: file.Sha1Checksum?.ToLowerInvariant(),
+            Sha256: file.Sha256Checksum?.ToLowerInvariant());
+        return hashes.IsEmpty ? null : hashes;
     }
 
     private Task<HttpResponseMessage> GetAsync(string relativeUrl, CancellationToken cancellationToken)

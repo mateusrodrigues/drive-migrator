@@ -155,12 +155,30 @@ internal sealed class OneDriveCapability(GraphClient graph) : IDriveCapability
         var id = driveId is null ? $"me/drive/items/{itemId}" : $"drives/{driveId}/items/{itemId}";
 
         var isFolder = (remote?.Folder ?? item.Folder) is not null;
+        var file = remote?.File ?? item.File;
         return new MigrationNode(id, item.Name, isFolder ? NodeKind.Folder : NodeKind.File)
         {
             Size = isFolder ? null : remote?.Size ?? item.Size,
             ModifiedAt = item.LastModifiedDateTime,
-            MimeType = (remote?.File ?? item.File)?.MimeType,
+            MimeType = file?.MimeType,
+            Hashes = HashesOf(file?.Hashes),
         };
+    }
+
+    private static FileHashes? HashesOf(HashesFacet? facet)
+    {
+        if (facet is null)
+        {
+            return null;
+        }
+
+        var hashes = new FileHashes(
+            Sha1: NullIfEmpty(facet.Sha1Hash)?.ToLowerInvariant(),
+            Sha256: NullIfEmpty(facet.Sha256Hash)?.ToLowerInvariant(),
+            QuickXor: NullIfEmpty(facet.QuickXorHash));
+        return hashes.IsEmpty ? null : hashes;
+
+        static string? NullIfEmpty(string? value) => string.IsNullOrEmpty(value) ? null : value;
     }
 
     private static string PathOf(MigrationNode? node) => node?.Id ?? RootPath;

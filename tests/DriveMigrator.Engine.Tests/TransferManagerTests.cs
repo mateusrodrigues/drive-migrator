@@ -110,6 +110,48 @@ public sealed class TransferManagerTests : IDisposable
         Assert.Equal(1, _f.Destination.Drive.Count);
     }
 
+    [Fact]
+    public async Task RetryMismatched_OverwritesTheDamagedCopy()
+    {
+        await _accounts.LoadAsync(Ct);
+        using var manager = new TransferManager(_f.Store, _accounts);
+        _f.Source.Drive.AddFile(null, "a.txt", [1, 2, 3]);
+        _f.Destination.Drive.CorruptUpload = bytes => [.. bytes, 0];
+
+        var job = manager.Start(Request([null]), "copy");
+        await WaitForAsync(job, s => s == JobStatus.CompletedWithErrors);
+        Assert.Equal(FailureKind.ChecksumMismatch, Assert.Single(manager.GetFailures(job)).Failure);
+
+        // "Retry failed" is for ordinary errors: it doesn't touch the damaged copy.
+        manager.RetryFailed(job);
+        await WaitForAsync(job, s => s == JobStatus.CompletedWithErrors);
+
+        _f.Destination.Drive.CorruptUpload = null;
+        manager.RetryMismatched(job, FailureKind.ChecksumMismatch, ConflictPolicy.Overwrite);
+        await WaitForAsync(job, s => s == JobStatus.Completed);
+
+        var copy = Assert.Single(await _f.Destination.Drive.GetChildrenAsync(null, Ct).ToListAsync(Ct));
+        Assert.Equal([1, 2, 3], _f.Destination.Drive.GetContent(copy));
+    }
+
+    [Fact]
+    public async Task KeepDestinationVersions_SettlesDifferencesAsSkipped()
+    {
+        await _accounts.LoadAsync(Ct);
+        using var manager = new TransferManager(_f.Store, _accounts);
+        _f.Source.Drive.AddFile(null, "a.txt", [1]);
+        _f.Destination.Drive.AddFile(null, "a.txt", [2]);
+
+        var job = manager.Start(Request([null]) with { Options = new TransferOptions { CompareExisting = true } }, "copy");
+        await WaitForAsync(job, s => s == JobStatus.CompletedWithErrors);
+
+        manager.KeepDestinationVersions(job, FailureKind.DiffersFromExisting);
+
+        Assert.Equal(JobStatus.Completed, job.Status);
+        Assert.Equal((0, 1), (job.Counts.Failed, job.Counts.Skipped));
+        Assert.Equal(JobStatus.Completed, Assert.Single(_f.Store.LoadJobs()).Status);
+    }
+
     private TransferRequest Request(IReadOnlyList<MigrationNode?> nodes)
         => new(_f.Source, _f.Destination, [.. nodes.Select(n => new TransferItem(CapabilityKind.Drive, n))], [new TransferTarget(CapabilityKind.Drive, null)]);
 

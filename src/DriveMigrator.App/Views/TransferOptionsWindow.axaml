@@ -50,6 +50,22 @@
             </StackPanel>
           </Border>
 
+          <Border Classes="section" IsVisible="{Binding HasFiles}">
+            <StackPanel Classes="section">
+              <TextBlock Classes="heading-sm" Text="Checksums" />
+              <StackPanel Spacing="12">
+                <CheckBox IsChecked="{Binding VerifyHashes}">
+                  <TextBlock TextWrapping="Wrap" Text="Check each copy against the checksums both services report; a copy that doesn't match counts as failed" />
+                </CheckBox>
+                <CheckBox IsChecked="{Binding CompareExisting}" IsEnabled="{Binding CanCompareExisting}">
+                  <TextBlock TextWrapping="Wrap" Text="Compare files that already exist in the destination with the source instead of just skipping them" />
+                </CheckBox>
+              </StackPanel>
+              <TextBlock Classes="body-sm muted" TextWrapping="Wrap"
+                         Text="Comparing existing files needs &quot;Skip it&quot; above. Google documents and converted files have no checksum and are copied unchecked." />
+            </StackPanel>
+          </Border>
+
           <Border Classes="section" IsVisible="{Binding HasNativeDocuments}">
             <StackPanel Classes="section">
               <TextBlock Classes="heading-sm" Text="Google documents" />

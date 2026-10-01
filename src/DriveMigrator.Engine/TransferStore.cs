@@ -55,6 +55,9 @@ public sealed class TransferStore : IDisposable
             CREATE INDEX IF NOT EXISTS items_job_status ON items(job_id, status);
             """);
         store.AddColumnIfMissing("items", "details", "TEXT");
+        store.AddColumnIfMissing("items", "failure", "INTEGER NOT NULL DEFAULT 0");
+        store.AddColumnIfMissing("items", "resolution", "INTEGER");
+        store.AddColumnIfMissing("items", "replace", "TEXT");
         return store;
     }
 
@@ -134,10 +137,17 @@ public sealed class TransferStore : IDisposable
     public IReadOnlyList<ItemRecord> LoadItems(long jobId, ItemStatus status)
         => QueryItems("job_id = $job AND status = $status ORDER BY id", ("$job", jobId), ("$status", (int)status));
 
-    public void MarkInProgress(long itemId) => SetStatus(itemId, ItemStatus.InProgress, target: null, error: null, bytes: 0, details: null);
+    public void MarkInProgress(long itemId) => SetStatus(itemId, ItemStatus.InProgress, target: null, error: null, bytes: 0, details: null, FailureKind.Error);
 
-    public void MarkFinished(long itemId, ItemStatus status, MigrationNode? target = null, string? error = null, long bytes = 0, string? details = null)
-        => SetStatus(itemId, status, target, error, bytes, details);
+    public void MarkFinished(
+        long itemId,
+        ItemStatus status,
+        MigrationNode? target = null,
+        string? error = null,
+        long bytes = 0,
+        string? details = null,
+        FailureKind failure = FailureKind.Error)
+        => SetStatus(itemId, status, target, error, bytes, details, failure);
 
     /// <summary>
     /// Records that a container was created (or found) at <paramref name="target"/> and adds its children, atomically,
@@ -154,7 +164,7 @@ public sealed class TransferStore : IDisposable
                 try
                 {
                     firstId = InsertItems(container.JobId, container.Id, container.Depth + 1, children);
-                    SetStatusCore(container.Id, ItemStatus.Done, target, error: null, bytes: 0, details: null);
+                    SetStatusCore(container.Id, ItemStatus.Done, target, error: null, bytes: 0, details: null, FailureKind.Error);
                     transaction.Commit();
                 }
                 finally
@@ -169,10 +179,43 @@ public sealed class TransferStore : IDisposable
         }
     }
 
-    /// <summary>Makes failed items pending again so the next run retries them.</summary>
+    /// <summary>
+    /// Makes items that failed with an ordinary error pending again so the next run retries them. Checksum
+    /// mismatches are left alone: copying them again overwrites files, so they have their own actions
+    /// (<see cref="ResetMismatched"/>, <see cref="SkipMismatched"/>).
+    /// </summary>
     public int ResetFailed(long jobId)
-        => Execute("UPDATE items SET status = $pending, error = NULL, details = NULL WHERE job_id = $job AND status = $failed",
-            ("$pending", (int)ItemStatus.Pending), ("$job", jobId), ("$failed", (int)ItemStatus.Failed));
+        => Execute(
+            "UPDATE items SET status = $pending, error = NULL, details = NULL WHERE job_id = $job AND status = $failed AND failure = $error",
+            ("$pending", (int)ItemStatus.Pending), ("$job", jobId), ("$failed", (int)ItemStatus.Failed), ("$error", (int)FailureKind.Error));
+
+    /// <summary>
+    /// Makes items that failed with <paramref name="kind"/> pending again, to be copied with <paramref name="resolution"/>
+    /// instead of the job's conflict policy. With <see cref="ConflictPolicy.Overwrite"/> the destination file they
+    /// were compared with is replaced.
+    /// </summary>
+    public int ResetMismatched(long jobId, FailureKind kind, ConflictPolicy resolution)
+    {
+        ArgumentOutOfRangeException.ThrowIfEqual(kind, FailureKind.Error);
+        return Execute(
+            """
+            UPDATE items SET status = $pending, error = NULL, details = NULL, failure = $error, resolution = $resolution,
+                replace = CASE WHEN $resolution = $overwrite THEN target ELSE NULL END
+            WHERE job_id = $job AND status = $failed AND failure = $kind
+            """,
+            ("$pending", (int)ItemStatus.Pending), ("$error", (int)FailureKind.Error), ("$resolution", (int)resolution),
+            ("$overwrite", (int)ConflictPolicy.Overwrite), ("$job", jobId), ("$failed", (int)ItemStatus.Failed), ("$kind", (int)kind));
+    }
+
+    /// <summary>Settles items that failed with <paramref name="kind"/> as skipped, e.g. when the user keeps the destination's files.</summary>
+    public int SkipMismatched(long jobId, FailureKind kind, string reason)
+    {
+        ArgumentOutOfRangeException.ThrowIfEqual(kind, FailureKind.Error);
+        return Execute(
+            "UPDATE items SET status = $skipped, error = $reason, details = NULL, failure = $error WHERE job_id = $job AND status = $failed AND failure = $kind",
+            ("$skipped", (int)ItemStatus.Skipped), ("$reason", reason), ("$error", (int)FailureKind.Error),
+            ("$job", jobId), ("$failed", (int)ItemStatus.Failed), ("$kind", (int)kind));
+    }
 
     public JobCounts GetCounts(long jobId)
     {
@@ -230,20 +273,20 @@ public sealed class TransferStore : IDisposable
         return firstId;
     }
 
-    private void SetStatus(long itemId, ItemStatus status, MigrationNode? target, string? error, long bytes, string? details)
+    private void SetStatus(long itemId, ItemStatus status, MigrationNode? target, string? error, long bytes, string? details, FailureKind failure)
     {
         lock (_gate)
         {
-            SetStatusCore(itemId, status, target, error, bytes, details);
+            SetStatusCore(itemId, status, target, error, bytes, details, failure);
         }
     }
 
-    private void SetStatusCore(long itemId, ItemStatus status, MigrationNode? target, string? error, long bytes, string? details)
+    private void SetStatusCore(long itemId, ItemStatus status, MigrationNode? target, string? error, long bytes, string? details, FailureKind failure)
     {
         using var command = Command(
-            "UPDATE items SET status = $status, target = $target, error = $error, bytes = $bytes, details = $details WHERE id = $id",
+            "UPDATE items SET status = $status, target = $target, error = $error, bytes = $bytes, details = $details, failure = $failure WHERE id = $id",
             ("$status", (int)status), ("$target", ToJson(target)), ("$error", (object?)error ?? DBNull.Value), ("$bytes", bytes),
-            ("$details", (object?)details ?? DBNull.Value), ("$id", itemId));
+            ("$details", (object?)details ?? DBNull.Value), ("$failure", (int)failure), ("$id", itemId));
         command.ExecuteNonQuery();
     }
 
@@ -272,7 +315,7 @@ public sealed class TransferStore : IDisposable
     private List<ItemRecord> QueryItemsCore(string where, params (string Name, object Value)[] parameters)
     {
         using var command = Command(
-            $"SELECT id, job_id, parent_id, kind, name, depth, source, target_parent, status, target, error, bytes, details FROM items WHERE {where}",
+            $"SELECT id, job_id, parent_id, kind, name, depth, source, target_parent, status, target, error, bytes, details, failure, resolution, replace FROM items WHERE {where}",
             parameters);
         using var reader = command.ExecuteReader();
         var items = new List<ItemRecord>();
@@ -291,7 +334,10 @@ public sealed class TransferStore : IDisposable
                 FromJson(reader, 9),
                 reader.IsDBNull(10) ? null : reader.GetString(10),
                 reader.GetInt64(11),
-                reader.IsDBNull(12) ? null : reader.GetString(12)));
+                reader.IsDBNull(12) ? null : reader.GetString(12),
+                (FailureKind)reader.GetInt32(13),
+                reader.IsDBNull(14) ? null : (ConflictPolicy)reader.GetInt32(14),
+                FromJson(reader, 15)));
         }
 
         return items;

@@ -122,6 +122,8 @@ public sealed class TransferEngine(TransferStore store, int parallelism = 4)
                     item.Source,
                     item.TargetParent,
                     run.Job.Options,
+                    item.Resolution,
+                    item.Replace,
                     progress,
                     cancellationToken).ConfigureAwait(false),
                 CapabilityKind.Mail => await MailCopier.CopyAsync(
@@ -156,6 +158,11 @@ public sealed class TransferEngine(TransferStore store, int parallelism = 4)
         {
             // Left in progress; the next run treats it as pending.
             throw;
+        }
+        catch (ChecksumMismatchException ex)
+        {
+            store.MarkFinished(item.Id, ItemStatus.Failed, ex.Destination, ex.Message, details: ex.Details, failure: ex.Kind);
+            run.Observer.ItemFinished(item, ItemStatus.Failed, ex.Message);
         }
 #pragma warning disable CA1031 // A failing item must not stop the job; the error is recorded for the user.
         catch (Exception ex)

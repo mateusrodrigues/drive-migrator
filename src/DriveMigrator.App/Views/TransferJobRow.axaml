@@ -1,6 +1,7 @@
 <!--
   One row in the transfers panel. Calm at every state: an ordinary failure only adds to the count in the status line;
-  the one danger-coloured line is a problem that stops the whole transfer.
+  the one danger-coloured line is a problem that stops the whole transfer. Checksum mismatches are the exception that
+  asks for a decision, so once the job stops they are listed in the open, each list with its own actions.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -8,6 +9,18 @@
              xmlns:ctl="using:DriveMigrator.App.Controls"
              x:Class="DriveMigrator.App.Views.TransferJobRow"
              x:DataType="vm:TransferJobViewModel">
+  <UserControl.DataTemplates>
+    <DataTemplate x:DataType="vm:TransferFailureLine">
+      <SelectableTextBlock Classes="body-sm" TextWrapping="Wrap">
+        <Run Foreground="{DynamicResource ink-200}" Text="{Binding Name}" /><Run Foreground="{DynamicResource ink-200}" Text=": " /><Run Text="{Binding Message}" />
+      </SelectableTextBlock>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+  <UserControl.Resources>
+    <ItemsPanelTemplate x:Key="FailureList">
+      <StackPanel Spacing="6" />
+    </ItemsPanelTemplate>
+  </UserControl.Resources>
   <Border Padding="12" CornerRadius="{StaticResource radius-md}" BorderThickness="1"
           BorderBrush="{DynamicResource border-100}" Background="{DynamicResource surface-200}">
     <StackPanel Spacing="6">
@@ -52,23 +65,42 @@
         <TextBlock Classes="body-sm danger" TextWrapping="Wrap" Text="{Binding Problem}" />
       </DockPanel>
 
+      <Border IsVisible="{Binding ShowMismatches}" Margin="0,4,0,0" Padding="0,8,0,0"
+              BorderBrush="{DynamicResource border-100}" BorderThickness="0,1,0,0">
+        <StackPanel Spacing="8">
+          <DockPanel>
+            <ctl:Icon Classes="warning" Kind="Warning" Width="13" Height="13" Margin="0,2,4,0" VerticalAlignment="Top" />
+            <TextBlock Classes="body-sm warning" TextWrapping="Wrap" Text="{Binding MismatchSummary}" />
+          </DockPanel>
+          <ItemsControl ItemsSource="{Binding Mismatches}" ItemsPanel="{StaticResource FailureList}" />
+          <Button Classes="secondary" HorizontalAlignment="Left" Content="Copy again and overwrite"
+                  Command="{Binding CopyMismatchesAgainCommand}" />
+        </StackPanel>
+      </Border>
+
+      <Border IsVisible="{Binding ShowDifferences}" Margin="0,4,0,0" Padding="0,8,0,0"
+              BorderBrush="{DynamicResource border-100}" BorderThickness="0,1,0,0">
+        <StackPanel Spacing="8">
+          <DockPanel>
+            <ctl:Icon Classes="warning" Kind="Warning" Width="13" Height="13" Margin="0,2,4,0" VerticalAlignment="Top" />
+            <TextBlock Classes="body-sm warning" TextWrapping="Wrap" Text="{Binding DifferencesSummary}" />
+          </DockPanel>
+          <ItemsControl ItemsSource="{Binding Differences}" ItemsPanel="{StaticResource FailureList}" />
+          <WrapPanel ItemSpacing="8" LineSpacing="8">
+            <Button Classes="secondary" Content="Overwrite them" Command="{Binding OverwriteDifferencesCommand}"
+                    ToolTip.Tip="Replace the destination's files with the source's" />
+            <Button Classes="secondary" Content="Keep both" Command="{Binding KeepBothDifferencesCommand}"
+                    ToolTip.Tip="Copy the source's files beside them as &quot;name (1)&quot;" />
+            <Button Classes="ghost" Content="Keep the destination's" Command="{Binding KeepDestinationDifferencesCommand}"
+                    ToolTip.Tip="Leave the destination as it is" />
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+
       <Border IsVisible="{Binding ShowFailures}" Margin="0,4,0,0" Padding="0,8,0,0"
               BorderBrush="{DynamicResource border-100}" BorderThickness="0,1,0,0">
         <StackPanel Spacing="6">
-          <ItemsControl ItemsSource="{Binding Failures}">
-            <ItemsControl.ItemsPanel>
-              <ItemsPanelTemplate>
-                <StackPanel Spacing="6" />
-              </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="vm:TransferFailureLine">
-                <SelectableTextBlock Classes="body-sm" TextWrapping="Wrap">
-                  <Run Foreground="{DynamicResource ink-200}" Text="{Binding Name}" /><Run Foreground="{DynamicResource ink-200}" Text=": " /><Run Text="{Binding Message}" />
-                </SelectableTextBlock>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
+          <ItemsControl ItemsSource="{Binding Failures}" ItemsPanel="{StaticResource FailureList}" />
           <Panel HorizontalAlignment="Left">
             <Button Classes="ghost" Content="Copy error details" Command="{Binding CopyErrorDetailsCommand}"
                     IsVisible="{Binding !CopiedDetails}"

@@ -15,6 +15,18 @@ public sealed class FakeDriveCapability() : InMemoryCapability(CapabilityKind.Dr
     /// <summary>Called before each upload with the file name; throw or block to simulate failures and slow transfers.</summary>
     public Func<string, CancellationToken, Task>? OnUpload { get; set; }
 
+    /// <summary>
+    /// Which of the checksums of a file's content the fake reports (all of them by default). Return e.g. only
+    /// <see cref="FileHashes.QuickXor"/> to mimic OneDrive for Business, or null for a service without checksums.
+    /// </summary>
+    public Func<FileHashes, FileHashes?> ReportHashes { get; set; } = hashes => hashes;
+
+    /// <summary>Changes the bytes an upload stores, to simulate content damaged on the way in.</summary>
+    public Func<byte[], byte[]>? CorruptUpload { get; set; }
+
+    /// <summary>Leaves checksums out of the node returned by an upload (listings still have them), like a slow OneDrive.</summary>
+    public bool OmitHashesFromUploadResponse { get; set; }
+
     private int _uploadCount;
 
     public int UploadCount => _uploadCount;
@@ -25,8 +37,18 @@ public sealed class FakeDriveCapability() : InMemoryCapability(CapabilityKind.Dr
         return string.Concat(name.Select(c => InvalidNameCharacters.Contains(c, StringComparison.Ordinal) ? '_' : c));
     }
 
-    public MigrationNode AddFile(MigrationNode? parent, string name, byte[] content, string mimeType = "application/octet-stream")
-        => Add(parent, FileNode(NewId(), name, mimeType, content.Length), new StoredFile(content, ConvertedToNative: false, Exports: null));
+    /// <summary>Adds a file. <paramref name="reportedHashes"/> overrides the checksums reported for it (e.g. a wrong one).</summary>
+    public MigrationNode AddFile(MigrationNode? parent, string name, byte[] content, string mimeType = "application/octet-stream", FileHashes? reportedHashes = null)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        var node = FileNode(NewId(), name, mimeType, content);
+        if (reportedHashes is not null)
+        {
+            node = node with { Hashes = reportedHashes };
+        }
+
+        return Add(parent, node, new StoredFile(content, ConvertedToNative: false, Exports: null));
+    }
 
     /// <summary>Adds a provider-native document that can only be read by exporting it to one of <paramref name="exports"/>.</summary>
     public MigrationNode AddNativeDocument(MigrationNode? parent, string name, string mimeType, params (ExportFormat Format, byte[] Content)[] exports)
@@ -110,17 +132,24 @@ public sealed class FakeDriveCapability() : InMemoryCapability(CapabilityKind.Dr
         }
 
         Interlocked.Increment(ref _uploadCount);
-        var bytes = buffer.ToArray();
-        var node = FileNode(NewId(), content.Name, content.MimeType, bytes.Length) with { ModifiedAt = content.ModifiedAt };
+        var bytes = CorruptUpload?.Invoke(buffer.ToArray()) ?? buffer.ToArray();
+        var node = FileNode(NewId(), content.Name, content.MimeType, bytes) with { ModifiedAt = content.ModifiedAt };
+        if (options.ConvertToNativeFormat)
+        {
+            // Like Google Drive, converted documents have no checksum.
+            node = node with { Hashes = null };
+        }
+
         var stored = new StoredFile(bytes, options.ConvertToNativeFormat, Exports: null);
 
-        return options.Replace is { } existing
+        var uploaded = options.Replace is { } existing
             ? Replace(existing, node, stored)
             : Add(parent, node, stored);
+        return OmitHashesFromUploadResponse ? uploaded with { Hashes = null } : uploaded;
     }
 
-    private static MigrationNode FileNode(string id, string name, string mimeType, long size)
-        => new(id, name, NodeKind.File) { MimeType = mimeType, Size = size };
+    private MigrationNode FileNode(string id, string name, string mimeType, byte[] content)
+        => new(id, name, NodeKind.File) { MimeType = mimeType, Size = content.Length, Hashes = ReportHashes(FileHashAccumulator.Compute(content)) };
 
     private sealed record StoredFile(byte[] Content, bool ConvertedToNative, Dictionary<string, byte[]>? Exports);
 }
