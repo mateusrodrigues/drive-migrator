@@ -90,8 +90,9 @@ Snap packaging for Linux is in progress; other installers are out of scope for n
   `.metainfo.xml` and the SVG icon, all named after the app ID. Packaging formats install them into the standard
   `usr/share/{applications,metainfo,icons/hicolor}` paths rather than keeping their own copies.
 - `snap/snapcraft.yaml` adopts summary and description from the metainfo (`adopt-info` + `parse-info`) and finds
-  the desktop file and icon through `common-id`. The version is MinVer's (see Versioning): the `drive-migrator`
-  part writes it to a staged file and `desktop-integration` sets it with `craftctl`, overriding the metainfo's.
+  the desktop file and icon through `common-id`. Version and grade come from MinVer (see Versioning): the
+  `drive-migrator` part writes them to staged files that aren't primed, and `desktop-integration` sets them with
+  `craftctl`, overriding the metainfo's version and the yaml's `grade: devel`.
 - `StartupWMClass=DriveMigrator` matches Avalonia's default X11 `WM_CLASS` (the entry assembly name). Keep
   them in sync if the assembly is renamed or `X11PlatformOptions.WmClass` is set.
 - The snap app uses the `gnome` extension alongside `dotnet10`: core24 ships no desktop libraries, and SkiaSharp
@@ -109,11 +110,14 @@ version, apart from the metainfo's release history.
 
 - Release by tagging the commit with a `v`-prefixed SemVer tag (`v1.2.0`, `v1.3.0-rc.1`) and pushing the tag.
   Untagged commits get the next patch as a pre-release with the commit height, e.g. `1.2.1-alpha.0.3`.
+- A snap built from the tagged commit itself gets grade `stable`, pre-release tags included, so it can go to the
+  candidate and stable channels; any other commit builds a `devel` snap.
 - Add a matching `<release version="1.2.0" date="…">` to the metainfo when tagging so software centers list the
   release; it doesn't drive any version.
 - Check the computed version with
   `dotnet msbuild src/DriveMigrator.App/DriveMigrator.App.csproj -t:MinVer -getProperty:MinVerVersion`.
-- MinVer needs the history and tags, so CI checks out with `fetch-depth: 0`; a shallow clone misses the tags and falls back to `0.0.0-alpha.0`.
+- MinVer needs the history and tags, so CI checks out with `fetch-depth: 0`; a shallow clone misses the tags and
+  falls back to `0.0.0-alpha.0`.
 
 ## Commits
 

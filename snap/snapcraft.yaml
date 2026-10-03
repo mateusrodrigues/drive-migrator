@@ -1,9 +1,10 @@
 name: drive-migrator
 base: core24
-# summary, description and the desktop file come from the AppStream metainfo; the version is
-# MinVer's, computed from the git tags by the drive-migrator part
+# summary, description and the desktop file come from the AppStream metainfo; version and grade
+# come from the git tags through MinVer, computed by the drive-migrator part
 adopt-info: desktop-integration
 
+# overridden with stable when building a tagged release
 grade: devel
 confinement: strict
 
@@ -27,12 +28,19 @@ parts:
     build-packages: [git]
     override-build: |
       craftctl default
-      dotnet msbuild src/DriveMigrator.App/DriveMigrator.App.csproj -nologo -t:MinVer \
-        -getProperty:MinVerVersion -warnaserror:MINVER1001 > "$CRAFT_PART_INSTALL/minver-version"
+      project=src/DriveMigrator.App/DriveMigrator.App.csproj
+      version="$(dotnet msbuild "$project" -nologo -t:MinVer -getProperty:MinVerVersion \
+        -warnaserror:MINVER1001)"
+      prefix="$(dotnet msbuild "$project" -nologo -getProperty:MinVerTagPrefix)"
+      # a tagged release is a commit carrying the tag MinVer took the version from
+      if git tag --points-at HEAD | grep -qxF "$prefix$version"; then grade=stable; else grade=devel; fi
+      mkdir "$CRAFT_PART_INSTALL/snap-metadata"
+      echo "$version" > "$CRAFT_PART_INSTALL/snap-metadata/version"
+      echo "$grade" > "$CRAFT_PART_INSTALL/snap-metadata/grade"
     organize:
       '*': opt/drive-migrator/
     prime:
-      - -opt/drive-migrator/minver-version
+      - -opt/drive-migrator/snap-metadata
 
   desktop-integration:
     plugin: dump
@@ -40,9 +48,11 @@ parts:
     after: [drive-migrator]
     override-build: |
       craftctl default
-      version="$(cat "$CRAFT_STAGE/opt/drive-migrator/minver-version")"
+      version="$(cat "$CRAFT_STAGE/opt/drive-migrator/snap-metadata/version")"
+      grade="$(cat "$CRAFT_STAGE/opt/drive-migrator/snap-metadata/grade")"
       test -n "$version"
       craftctl set version="$version"
+      craftctl set grade="$grade"
     organize:
       tech.mateus.DriveMigrator.desktop: usr/share/applications/tech.mateus.DriveMigrator.desktop
       tech.mateus.DriveMigrator.metainfo.xml: usr/share/metainfo/tech.mateus.DriveMigrator.metainfo.xml
