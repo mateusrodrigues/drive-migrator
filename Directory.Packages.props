@@ -3,6 +3,10 @@
     <AvaloniaVersion>12.1.3</AvaloniaVersion>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Build: versions every project from git tags -->
+    <GlobalPackageReference Include="MinVer" Version="8.0.0" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- App -->
     <PackageVersion Include="Avalonia" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />

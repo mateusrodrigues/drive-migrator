@@ -1,6 +1,7 @@
 name: drive-migrator
 base: core24
-# version, summary, description and the desktop file come from the AppStream metainfo
+# summary, description and the desktop file come from the AppStream metainfo; the version is
+# MinVer's, computed from the git tags by the drive-migrator part
 adopt-info: desktop-integration
 
 grade: devel
@@ -21,12 +22,27 @@ parts:
     dotnet-version: '10.0'
     dotnet-project: src/DriveMigrator.App/DriveMigrator.App.csproj
     dotnet-verbosity: minimal
+    # MinVer shells out to git; building without the repository's history is an error rather
+    # than a silent 0.0.0-alpha.0
+    build-packages: [git]
+    override-build: |
+      craftctl default
+      dotnet msbuild src/DriveMigrator.App/DriveMigrator.App.csproj -nologo -t:MinVer \
+        -getProperty:MinVerVersion -warnaserror:MINVER1001 > "$CRAFT_PART_INSTALL/minver-version"
     organize:
       '*': opt/drive-migrator/
+    prime:
+      - -opt/drive-migrator/minver-version
 
   desktop-integration:
     plugin: dump
     source: packaging/linux
+    after: [drive-migrator]
+    override-build: |
+      craftctl default
+      version="$(cat "$CRAFT_STAGE/opt/drive-migrator/minver-version")"
+      test -n "$version"
+      craftctl set version="$version"
     organize:
       tech.mateus.DriveMigrator.desktop: usr/share/applications/tech.mateus.DriveMigrator.desktop
       tech.mateus.DriveMigrator.metainfo.xml: usr/share/metainfo/tech.mateus.DriveMigrator.metainfo.xml

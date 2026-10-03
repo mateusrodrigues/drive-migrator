@@ -8,5 +8,7 @@
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- MinVer: versions come from tags like v1.2.3 -->
+    <MinVerTagPrefix>v</MinVerTagPrefix>
   </PropertyGroup>
 </Project>
