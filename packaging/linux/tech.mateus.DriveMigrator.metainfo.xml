@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>tech.mateus.DriveMigrator</id>
+  <name>Drive Migrator</name>
+  <summary>Migrate files, mail, calendars and contacts between cloud accounts</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer id="tech.mateus">
+    <name>Mateus</name>
+  </developer>
+  <description>
+    <p>
+      Drive Migrator copies data between Google (Drive, Gmail, Calendar, Contacts) and Microsoft
+      (OneDrive, Outlook Mail, Calendar, Contacts) accounts. Copies never delete or change anything
+      in the source account.
+    </p>
+    <ul>
+      <li>Two panes: pick an account on each side and copy in either direction</li>
+      <li>Checksum verification of every copied file</li>
+      <li>Resumable transfers that survive restarts</li>
+      <li>Sign-ins through your own OAuth clients, with tokens kept in the OS credential store</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">tech.mateus.DriveMigrator.desktop</launchable>
+  <url type="homepage">https://github.com/mateusrodrigues/drive-migrator</url>
+  <url type="bugtracker">https://github.com/mateusrodrigues/drive-migrator/issues</url>
+  <url type="vcs-browser">https://github.com/mateusrodrigues/drive-migrator</url>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="1.0" date="2026-10-03"/>
+  </releases>
+</component>

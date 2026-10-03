@@ -80,7 +80,26 @@ If a new Google API or Graph permission is needed, update the scopes in `docs/se
 - Users bring their own OAuth client IDs (Settings → Credentials); the app ships none.
 - Choices with side effects are made per transfer job in the Transfer options dialog (Google-native document
   export formats, Office-to-native conversion, whether calendar attendees get invitations, name conflicts).
-- Packaging and installers are deliberately out of scope for now.
+
+## Packaging
+
+Snap packaging for Linux is in progress; other installers are out of scope for now.
+
+- The app ID is `tech.mateus.DriveMigrator`. Don't change it: launchers, store listings and AppStream key on it.
+- `packaging/linux/` holds the format-neutral desktop integration: the freedesktop `.desktop` entry, the AppStream
+  `.metainfo.xml` and the SVG icon, all named after the app ID. Packaging formats install them into the standard
+  `usr/share/{applications,metainfo,icons/hicolor}` paths rather than keeping their own copies.
+- `snap/snapcraft.yaml` adopts version, summary and description from the metainfo (`adopt-info` + `parse-info`)
+  and finds the desktop file and icon through `common-id`. Bump the version by adding a `<release>` to the
+  metainfo, not in `snapcraft.yaml`.
+- `StartupWMClass=DriveMigrator` matches Avalonia's default X11 `WM_CLASS` (the entry assembly name). Keep
+  them in sync if the assembly is renamed or `X11PlatformOptions.WmClass` is set.
+- The snap app uses the `gnome` extension alongside `dotnet10`: core24 ships no desktop libraries, and SkiaSharp
+  (fontconfig, freetype), Avalonia (X11) and the keyring (libsecret) come from the GNOME content snap. Plugs
+  beyond the extension's: `network`, `network-bind` (OAuth loopback redirect) and `password-manager-service`.
+- After editing them, validate with `desktop-file-validate packaging/linux/*.desktop` and
+  `appstreamcli validate --no-net packaging/linux/*.metainfo.xml`. Build the snap with `snapcraft` from the repo
+  root; the snap sets `DRIVEMIGRATOR_DATA_DIR` to `$SNAP_USER_DATA`.
 
 ## Commits
 

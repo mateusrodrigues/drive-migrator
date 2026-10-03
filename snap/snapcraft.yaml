@@ -1,0 +1,48 @@
+name: drive-migrator
+base: core24
+# version, summary, description and the desktop file come from the AppStream metainfo
+adopt-info: desktop-integration
+
+grade: devel
+confinement: strict
+
+platforms:
+  amd64:
+      build-on: [amd64]
+      build-for: [amd64]
+  arm64:
+      build-on: [arm64]
+      build-for: [arm64]
+
+parts:
+  drive-migrator:
+    plugin: dotnet
+    source: .
+    dotnet-version: '10.0'
+    dotnet-project: src/DriveMigrator.App/DriveMigrator.App.csproj
+    dotnet-verbosity: minimal
+    organize:
+      '*': opt/drive-migrator/
+
+  desktop-integration:
+    plugin: dump
+    source: packaging/linux
+    organize:
+      tech.mateus.DriveMigrator.desktop: usr/share/applications/tech.mateus.DriveMigrator.desktop
+      tech.mateus.DriveMigrator.metainfo.xml: usr/share/metainfo/tech.mateus.DriveMigrator.metainfo.xml
+      tech.mateus.DriveMigrator.svg: usr/share/icons/hicolor/scalable/apps/tech.mateus.DriveMigrator.svg
+    parse-info: [usr/share/metainfo/tech.mateus.DriveMigrator.metainfo.xml]
+
+apps:
+  drive-migrator:
+    command: opt/drive-migrator/DriveMigrator
+    common-id: tech.mateus.DriveMigrator
+    # gnome provides fontconfig, freetype, X11 and libsecret for SkiaSharp, Avalonia and the keyring
+    extensions: [ gnome, dotnet10 ]
+    environment:
+      DRIVEMIGRATOR_DATA_DIR: $SNAP_USER_DATA
+    plugs:
+      - home
+      - network
+      - network-bind
+      - password-manager-service

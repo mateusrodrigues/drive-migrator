@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Drive Migrator
+GenericName=Cloud Migration Tool
+Comment=Copy files, mail, calendars and contacts between Google and Microsoft accounts
+Exec=DriveMigrator
+Icon=tech.mateus.DriveMigrator
+Terminal=false
+Categories=Network;FileTransfer;
+Keywords=google;microsoft;drive;onedrive;gmail;outlook;calendar;contacts;migration;
+StartupNotify=true
+StartupWMClass=DriveMigrator
