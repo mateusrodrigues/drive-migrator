@@ -102,6 +102,10 @@ Snap packaging for Linux is in progress; other installers are out of scope for n
   `appstreamcli validate --no-net packaging/linux/*.metainfo.xml`. Build the snap with `snapcraft` from the root
   of a full clone (not a git worktree, whose `.git` points outside the build container); the snap sets
   `DRIVEMIGRATOR_DATA_DIR` to `$SNAP_USER_DATA`.
+- `.github/workflows/snap.yml` packs the snap on amd64 and arm64 runners with `canonical/craft-actions` and, once
+  both succeed, uploads them to the Snap Store: pushes to `main` go to `edge`, release tags to `candidate` and
+  pre-release tags to `beta`. Promoting to `stable` is a manual store release. Pull requests that touch
+  packaging only build. Uploads use the `SNAPCRAFT_STORE_CREDENTIALS` secret in the `snap-store` environment.
 
 ## Versioning
 

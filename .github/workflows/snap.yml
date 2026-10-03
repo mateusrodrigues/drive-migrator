@@ -1,0 +1,78 @@
+name: Snap
+
+on:
+  push:
+    branches: [main]
+    tags: ['v[0-9]+.[0-9]+.[0-9]+*']
+  pull_request:
+    paths:
+      - snap/**
+      - packaging/**
+      - .github/workflows/snap.yml
+
+concurrency:
+  group: snap-${{ github.ref }}
+  # never cancel a release mid-upload
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  build:
+    name: Build (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # MinVer needs the tags and history to compute the version and grade
+          fetch-depth: 0
+
+      # packs the platform whose build-on matches the runner's architecture
+      - name: Pack
+        id: pack
+        uses: canonical/craft-actions/snapcraft/pack@v0
+
+      - name: Upload snap
+        uses: actions/upload-artifact@v4
+        with:
+          name: snap-${{ matrix.arch }}
+          path: ${{ steps.pack.outputs.snap }}
+          if-no-files-found: error
+
+  publish:
+    name: Publish
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    environment: snap-store
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: snap-*
+          merge-multiple: true
+
+      - name: Install Snapcraft
+        run: sudo snap install snapcraft --classic
+
+      # main goes to edge; release tags go to candidate (promote to stable by hand) and
+      # pre-release tags to beta. Tagged builds have grade stable, which both channels require.
+      - name: Upload to the Snap Store
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          if [[ "$GITHUB_REF" != refs/tags/* ]]; then
+            channel=edge
+          elif [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            channel=beta
+          else
+            channel=candidate
+          fi
+          for snap in *.snap; do
+            snapcraft upload --release="$channel" "$snap"
+          done
