@@ -131,7 +131,7 @@
         <StackPanel Spacing="16" IsEnabled="{Binding IsIdle}"
                     IsVisible="{Binding SelectedTab, Converter={x:Static vm:Converters.IndexEquals}, ConverterParameter=1}">
           <TextBlock Classes="body-sm muted" TextWrapping="Wrap"
-                     Text="Drive Migrator signs in with OAuth apps you register yourself, so your data only flows through apps you control. See docs/setup-google.md and docs/setup-microsoft.md for step-by-step instructions." />
+                     Text="Drive Migrator signs in with OAuth apps you register yourself, so your data only flows through apps you control. Each service's guide walks through creating its app step by step." />
           <ItemsControl ItemsSource="{Binding Credentials}">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
@@ -142,7 +142,16 @@
               <DataTemplate x:DataType="vm:ProviderCredentialsViewModel">
                 <Border Classes="card">
                   <StackPanel Spacing="12">
-                    <TextBlock Classes="heading-sm" Text="{Binding DisplayName}" />
+                    <DockPanel>
+                      <Button DockPanel.Dock="Right" Classes="secondary" IsVisible="{Binding HasGuide}"
+                              Command="{Binding ShowGuideCommand}" ToolTip.Tip="Open the step-by-step setup guide">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <ctl:Icon Kind="DocLines" />
+                          <TextBlock Text="How to set this up" />
+                        </StackPanel>
+                      </Button>
+                      <TextBlock Classes="heading-sm" VerticalAlignment="Center" Text="{Binding DisplayName}" />
+                    </DockPanel>
                     <ItemsControl ItemsSource="{Binding Fields}">
                       <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>

@@ -235,6 +235,29 @@ public sealed class WindowRenderingTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void GuideWindows_Render()
+    {
+        foreach (var provider in new[] { "google", "microsoft" })
+        {
+            var window = new GuideWindow(Services.SetupGuides.Load(provider)!);
+            window.Show();
+            Capture(window, $"guide-{provider}");
+
+            // The end of the guide, below the fold.
+            window.GetVisualDescendants().OfType<ScrollViewer>().Single().ScrollToEnd();
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+            Capture(window, $"guide-{provider}-end");
+            window.GetVisualDescendants().OfType<ScrollViewer>().Single().ScrollToHome();
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+            Application.Current!.RequestedThemeVariant = ThemeVariant.Dark;
+            Capture(window, $"guide-{provider}-dark");
+            Application.Current.RequestedThemeVariant = ThemeVariant.Default;
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public void ConfirmAndMessageDialogs_Render()
     {
         var confirm = new ConfirmDialog("Remove account", "Remove ada@outlook.com (Microsoft)? Its saved sign-in will be deleted from this computer. No data in the account is changed.", "Remove", destructive: true);

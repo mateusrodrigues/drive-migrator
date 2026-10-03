@@ -13,6 +13,14 @@ internal sealed class FakeDialogService : IDialogService
 
     public Task ShowSettingsAsync() => Task.CompletedTask;
 
+    public List<string> GuidesShown { get; } = [];
+
+    public Task ShowSetupGuideAsync(string providerId)
+    {
+        GuidesShown.Add(providerId);
+        return Task.CompletedTask;
+    }
+
     public string? Clipboard { get; private set; }
 
     public Task CopyToClipboardAsync(string text)

@@ -54,7 +54,10 @@ The developer's own Google and Microsoft accounts may be signed in on this machi
    transfer path (`tests/DriveMigrator.Engine.Tests`).
 
 If a new Google API or Graph permission is needed, update the scopes in `docs/setup-google.md` or
-`docs/setup-microsoft.md`.
+`docs/setup-microsoft.md`. Those files are also packaged into the app (`AvaloniaResource` in the App project) and
+shown by the "How to set this up" button on Settings → Credentials, rendered by `Controls/MarkdownView.cs`
+(headings, lists, quotes, pipe tables, code, emphasis and links; no images or raw HTML). A provider gets a button
+when `docs/setup-{providerId}.md` exists. Check a guide's rendering after editing it (`GuideWindows_Render`).
 
 ## Tests
 

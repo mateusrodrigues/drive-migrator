@@ -1,0 +1,21 @@
+<!-- A setup guide: rendered Markdown that scrolls, with Close in the footer. Not modal, so it can stay open while the form is filled in. -->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="using:DriveMigrator.App.Controls"
+        x:Class="DriveMigrator.App.Views.GuideWindow"
+        Classes="dialog"
+        Width="720" Height="680"
+        MinWidth="480" MinHeight="360"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+  <DockPanel>
+    <Border DockPanel.Dock="Bottom" Classes="dialog-footer">
+      <StackPanel>
+        <Button Classes="secondary" Content="Close" IsCancel="True" Click="OnClose" />
+      </StackPanel>
+    </Border>
+    <ScrollViewer>
+      <ctl:MarkdownView x:Name="Guide" Margin="32,24" MaxWidth="640" HorizontalAlignment="Stretch" />
+    </ScrollViewer>
+  </DockPanel>
+</Window>

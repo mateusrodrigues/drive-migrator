@@ -22,6 +22,7 @@ Contacts; personal and work/school accounts). Built with .NET 10 and Avalonia.
 - **Resumable transfers.** Jobs are stored locally, survive restarts, can be paused and retried, and list every
   failed item with its full error.
 - **Your own OAuth apps.** Sign-ins go through clients you register, and tokens stay in the OS credential store.
+  Step-by-step setup guides for Google and Microsoft are built into the app, one click from **Settings → Credentials**.
 - **Light and dark themes.**
 
 <table>
@@ -31,7 +32,10 @@ Contacts; personal and work/school accounts). Built with .NET 10 and Avalonia.
   </tr>
   <tr>
     <td><img src="docs/screenshots/settings-accounts.png" alt="Settings, Accounts tab: one connected account and one needing re-authorization"></td>
-    <td><img src="docs/screenshots/settings-credentials.png" alt="Settings, Credentials tab: OAuth client fields for Google and Microsoft"></td>
+    <td><img src="docs/screenshots/settings-credentials.png" alt="Settings, Credentials tab: OAuth client fields for Google and Microsoft, each with a How to set this up button"></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="docs/screenshots/setup-guide.png" alt="The built-in Google setup guide, opened from the Credentials tab"></td>
   </tr>
 </table>
 
@@ -78,7 +82,8 @@ Contacts; personal and work/school accounts). Built with .NET 10 and Avalonia.
 
 ## Credentials
 
-Drive Migrator doesn't ship with OAuth clients. You register your own and enter them in **Settings → Credentials**:
+Drive Migrator doesn't ship with OAuth clients. You register your own and enter them in **Settings → Credentials**,
+where **How to set this up** opens each service's guide in the app. The same guides are here:
 
 - [Google setup](docs/setup-google.md)
 - [Microsoft setup](docs/setup-microsoft.md)

@@ -40,6 +40,27 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void CredentialsOfAProviderWithAGuide_OpenItFromTheForm()
+    {
+        using var vm = CreateViewModel();
+        var google = Assert.Single(vm.Credentials);
+
+        Assert.True(google.HasGuide);
+        google.ShowGuideCommand.Execute(null);
+
+        Assert.Equal(["google"], _dialogs.GuidesShown);
+    }
+
+    [AvaloniaFact]
+    public void CredentialsOfAProviderWithoutAGuide_OfferNone()
+    {
+        var other = new FakeCloudProvider("other", "Other") { CredentialFields = [new CredentialField("clientId", "Client ID")] };
+        using var vm = new SettingsViewModel(_accounts, new ProviderRegistry([other]), _credentials, _secrets, _dialogs);
+
+        Assert.False(Assert.Single(vm.Credentials).HasGuide);
+    }
+
+    [AvaloniaFact]
     public async Task SavingCredentials_EnablesAddingAccounts()
     {
         using var vm = CreateViewModel();

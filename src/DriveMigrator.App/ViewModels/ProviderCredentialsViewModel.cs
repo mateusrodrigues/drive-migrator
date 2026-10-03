@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DriveMigrator.App.Services;
 using DriveMigrator.Core;
 using DriveMigrator.Core.Security;
 
@@ -10,6 +11,7 @@ namespace DriveMigrator.App.ViewModels;
 public sealed partial class ProviderCredentialsViewModel(
     ICloudProvider provider,
     ProviderCredentialStore store,
+    IDialogService dialogs,
     Func<ProviderCredentialsViewModel, Task> saved) : ViewModelBase
 {
     public ICloudProvider Provider { get; } = provider;
@@ -18,6 +20,9 @@ public sealed partial class ProviderCredentialsViewModel(
 
     public ObservableCollection<CredentialFieldViewModel> Fields { get; } =
         [.. provider.CredentialFields.Select(f => new CredentialFieldViewModel(f))];
+
+    /// <summary>Whether the app carries a guide for creating this provider's OAuth app.</summary>
+    public bool HasGuide { get; } = SetupGuides.Exists(provider.Id);
 
     [ObservableProperty]
     public partial bool IsConfigured { get; set; }
@@ -35,6 +40,9 @@ public sealed partial class ProviderCredentialsViewModel(
 
         IsConfigured = await store.IsConfiguredAsync(Provider);
     }
+
+    [RelayCommand]
+    private Task ShowGuideAsync() => dialogs.ShowSetupGuideAsync(Provider.Id);
 
     [RelayCommand]
     private async Task SaveAsync()

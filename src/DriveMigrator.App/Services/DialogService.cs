@@ -10,12 +10,33 @@ namespace DriveMigrator.App.Services;
 
 internal sealed class DialogService(IServiceProvider services) : IDialogService
 {
+    private readonly Dictionary<string, GuideWindow> _guides = [];
+
     public async Task ShowSettingsAsync()
     {
         using var viewModel = services.GetRequiredService<SettingsViewModel>();
         var window = new SettingsWindow { DataContext = viewModel };
         window.Opened += async (_, _) => await viewModel.InitializeAsync();
         await window.ShowDialog(Owner());
+    }
+
+    public Task ShowSetupGuideAsync(string providerId)
+    {
+        if (_guides.TryGetValue(providerId, out var open))
+        {
+            open.Activate();
+        }
+        else if (SetupGuides.Load(providerId) is { } guide)
+        {
+            var window = new GuideWindow(guide);
+            _guides[providerId] = window;
+            window.Closed += (_, _) => _guides.Remove(providerId);
+
+            // Owned but not modal: the guide stays open while the credentials are typed in.
+            window.Show(Owner());
+        }
+
+        return Task.CompletedTask;
     }
 
     public Task<bool> ConfirmAsync(string title, string message, string confirmText, bool destructive = false)

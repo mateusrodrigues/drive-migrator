@@ -29,7 +29,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable
 
         foreach (var provider in providers.Providers)
         {
-            Credentials.Add(new ProviderCredentialsViewModel(provider, credentials, OnCredentialsSavedAsync));
+            Credentials.Add(new ProviderCredentialsViewModel(provider, credentials, dialogs, OnCredentialsSavedAsync));
             AddAccountOptions.Add(new AddAccountOptionViewModel(provider, AddAccountAsync));
         }
 

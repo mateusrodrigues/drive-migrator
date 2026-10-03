@@ -216,6 +216,27 @@
     <Setter Property="Padding" Value="16" />
   </Style>
 
+  <!-- Rendered Markdown: a bordered table and a code block. -->
+  <Style Selector="Border.table">
+    <Setter Property="BorderBrush" Value="{DynamicResource border-100}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource radius-md}" />
+  </Style>
+  <Style Selector="Border.table > Grid > Border.cell">
+    <Setter Property="BorderBrush" Value="{DynamicResource border-100}" />
+  </Style>
+  <Style Selector="Border.table > Grid > Border.cell.head">
+    <Setter Property="Background" Value="{DynamicResource surface-300}" />
+  </Style>
+  <Style Selector="Border.rule">
+    <Setter Property="Background" Value="{DynamicResource border-100}" />
+  </Style>
+  <Style Selector="Border.code">
+    <Setter Property="Background" Value="{DynamicResource surface-300}" />
+    <Setter Property="CornerRadius" Value="{StaticResource radius-md}" />
+    <Setter Property="Padding" Value="12,8" />
+  </Style>
+
   <!-- Banner: a tinted strip for a message about the whole screen, always with a tone icon. -->
   <Style Selector="Border.banner">
     <Setter Property="Padding" Value="16,12" />
